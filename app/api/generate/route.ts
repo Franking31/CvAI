@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateCVPrompt } from '@/lib/promts';
 import type { AIProvider } from '@/lib/store';
 
+
 const GEMINI_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
