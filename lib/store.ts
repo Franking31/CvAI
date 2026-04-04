@@ -44,6 +44,9 @@ type CVStore = {
   conversationHistory: Message[];
   aiProvider: AIProvider;
   aiModel: string;
+  jobUrl: string;
+  
+  
 
   setProfile: (profile: UserProfileForm) => void;
   setJobDescription: (desc: string) => void;
@@ -54,6 +57,8 @@ type CVStore = {
   resetAll: () => void;
   setAIProvider: (provider: AIProvider) => void;
   setAIModel: (model: string) => void;
+  setJobUrl: (url: string) => void;
+  
 };
 
 export const useCVStore = create<CVStore>()(
@@ -66,11 +71,13 @@ export const useCVStore = create<CVStore>()(
       conversationHistory: [],
       aiProvider: 'gemini',
       aiModel: AI_PROVIDERS.gemini.defaultModel,
+      jobUrl: '',
 
       setProfile: (profile) => set({ profile }),
       setJobDescription: (desc) => set({ jobDescription: desc }),
       setGeneratedCV: (cv) => set({ generatedCV: cv }),
       setKeywordAnalysis: (analysis) => set({ keywordAnalysis: analysis }),
+      setJobUrl: (url) => set({ jobUrl: url }),
 
       addMessage: (message) =>
         set((state) => ({
@@ -105,6 +112,7 @@ export const useCVStore = create<CVStore>()(
         conversationHistory: state.conversationHistory,
         aiProvider: state.aiProvider,
         aiModel: state.aiModel,
+        jobUrl: state.jobUrl,
       }),
     }
   )
