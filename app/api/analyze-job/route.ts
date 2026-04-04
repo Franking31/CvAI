@@ -1,4 +1,5 @@
 // app/api/analyze-job/route.ts
+import { parseApiError } from '@/lib/errors';
 import { NextRequest, NextResponse } from 'next/server';
 
 // ─── Prompt ──────────────────────────────────────────────────────────────────
@@ -83,24 +84,27 @@ async function analyzeWithGroq(jobDescription: string, model: string): Promise<a
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  let provider = 'gemini';
   try {
-    const { jobDescription, provider = 'gemini', model } = await req.json();
+    const body = await req.json();
+    provider = body.provider ?? 'gemini';
+    const { jobDescription, model } = body;
 
     if (!jobDescription?.trim()) {
       return NextResponse.json({ error: 'Offre manquante' }, { status: 400 });
     }
 
     let analysis: any;
-
     if (provider === 'groq') {
       analysis = await analyzeWithGroq(jobDescription, model || 'llama-3.3-70b-versatile');
     } else {
-      analysis = await analyzeWithGemini(jobDescription, model || 'gemini-2.5-flash-lite');
+      analysis = await analyzeWithGemini(jobDescription, model || 'gemini-2.0-flash');
     }
 
     return NextResponse.json({ analysis });
   } catch (err: any) {
     console.error('[analyze-job]', err);
-    return NextResponse.json({ error: err.message || 'Erreur serveur' }, { status: 500 });
+    const friendlyMessage = parseApiError(err.message || '', provider);
+    return NextResponse.json({ error: friendlyMessage }, { status: 500 });
   }
 }

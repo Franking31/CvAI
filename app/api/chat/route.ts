@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildGeminiHistory, buildGroqMessages } from '../../../lib/promts';
 import type { AIProvider } from '@/lib/store';
+import { parseApiError } from '@/lib/errors';
 
 const GEMINI_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent';
@@ -59,16 +60,19 @@ async function callGroq(
 }
 
 export async function POST(req: NextRequest) {
+  let provider: AIProvider = 'gemini';
   try {
-    const { profile, jobDescription, history, message, provider = 'gemini', model } =
-      await req.json() as {
-        profile: any;
-        jobDescription: string;
-        history: any[];
-        message: string;
-        provider: AIProvider;
-        model: string;
-      };
+    const body = await req.json() as {
+      profile: any;
+      jobDescription: string;
+      history: any[];
+      message: string;
+      provider: AIProvider;
+      model: string;
+    };
+
+    provider = body.provider ?? 'gemini';
+    const { profile, jobDescription, history, message, model } = body;
 
     if (!message) {
       return NextResponse.json({ error: 'Message requis' }, { status: 400 });
@@ -84,9 +88,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ reply });
   } catch (error: any) {
     console.error('Erreur chat:', error);
-    return NextResponse.json(
-      { error: error.message || 'Erreur interne' },
-      { status: 500 }
-    );
+    const friendlyMessage = parseApiError(error.message || '', provider);
+    return NextResponse.json({ error: friendlyMessage }, { status: 500 });
   }
 }

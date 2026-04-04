@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCVPrompt } from '@/lib/promts';
 import type { AIProvider } from '@/lib/store';
+import { parseApiError } from '@/lib/errors';
 
 
 const GEMINI_URL =
@@ -43,13 +44,17 @@ async function callGroq(prompt: string, model: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  let provider: AIProvider = 'gemini'; // ← déclaré AVANT le try
   try {
-    const { profile, jobDescription, provider = 'gemini', model } = await req.json() as {
+    const body = await req.json() as {
       profile: any;
       jobDescription: string;
       provider: AIProvider;
       model: string;
     };
+
+    provider = body.provider ?? 'gemini'; // ← assigné depuis le body
+    const { profile, jobDescription, model } = body;
 
     if (!profile || !jobDescription) {
       return NextResponse.json(
@@ -73,9 +78,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ cv: generatedCV });
   } catch (error: any) {
     console.error('Erreur génération CV:', error);
-    return NextResponse.json(
-      { error: error.message || 'Erreur interne' },
-      { status: 500 }
-    );
+    const friendlyMessage = parseApiError(error.message || '', provider);
+    return NextResponse.json({ error: friendlyMessage }, { status: 500 });
   }
 }

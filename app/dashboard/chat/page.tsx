@@ -61,6 +61,85 @@ export default function ChatPage() {
       sendMessage();
     }
   };
+  function renderMarkdown(text: string) {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Ligne vide
+    if (line.trim() === '') {
+      i++;
+      continue;
+    }
+
+    // Titre ## ou ###
+    if (line.startsWith('### ')) {
+      elements.push(
+        <p key={i} className="font-bold text-sm mt-2 mb-0.5">
+          {parseInline(line.slice(4))}
+        </p>
+      );
+    } else if (line.startsWith('## ')) {
+      elements.push(
+        <p key={i} className="font-bold text-sm mt-2 mb-0.5">
+          {parseInline(line.slice(3))}
+        </p>
+      );
+    }
+    // Ligne de séparation ---
+    else if (/^[-*]{3,}$/.test(line.trim())) {
+      elements.push(<hr key={i} className="border-current opacity-20 my-1" />);
+    }
+    // Bullet - ou *
+    else if (/^[-*] /.test(line)) {
+      const bullets: string[] = [];
+      while (i < lines.length && /^[-*] /.test(lines[i])) {
+        bullets.push(lines[i].slice(2));
+        i++;
+      }
+      elements.push(
+        <ul key={`ul-${i}`} className="space-y-0.5 my-1 pl-3">
+          {bullets.map((b, bi) => (
+            <li key={bi} className="flex gap-2">
+              <span className="opacity-50 shrink-0">•</span>
+              <span>{parseInline(b)}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+    // Texte normal
+    else {
+      elements.push(
+        <p key={i} className="leading-relaxed">
+          {parseInline(line)}
+        </p>
+      );
+    }
+
+    i++;
+  }
+
+  return <div className="space-y-0.5 text-sm">{elements}</div>;
+}
+
+function parseInline(text: string): React.ReactNode {
+  // Gère **gras** et *italique*
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
 
   return (
     <div className="max-w-3xl mx-auto p-6 flex flex-col h-[calc(100vh-56px)]">
@@ -130,9 +209,7 @@ export default function ChatPage() {
                 ? 'bg-primary text-primary-foreground rounded-br-sm'
                 : 'bg-muted text-foreground rounded-bl-sm'
             }`}>
-              {msg.content.split('\n').map((line, j) => (
-                <span key={j}>{line}{j < msg.content.split('\n').length - 1 && <br />}</span>
-              ))}
+              {renderMarkdown(msg.content)}
             </div>
             {msg.role === 'user' && (
               <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
