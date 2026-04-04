@@ -43,6 +43,7 @@ COMPÉTENCES :
 PROJETS :
 - Reformule les descriptions pour mettre en avant ce qui est pertinent pour l'offre
 - Utilise le vocabulaire technique de l'offre quand applicable
+- Conserve les URLs des projets tels quels
 
 Retourne UNIQUEMENT ce JSON valide, sans backticks, sans texte avant ou après :
 
@@ -52,7 +53,11 @@ Retourne UNIQUEMENT ce JSON valide, sans backticks, sans texte avant ou après :
   "contact": {
     "email": "${profile.email}",
     "phone": "${profile.phone}",
-    "location": "${profile.location}"
+    "location": "${profile.location}",
+    "linkedin": "${profile.linkedin || ''}",
+    "github": "${profile.github || ''}",
+    "portfolio": "${profile.portfolio || ''}",
+    "socialLinks": ${JSON.stringify(profile.socialLinks || [])}
   },
   "professionalSummary": "Résumé entièrement réécrit avec les mots-clés ATS de l'offre, NE PAS copier le résumé original",
   "experiences": [
@@ -75,7 +80,8 @@ Retourne UNIQUEMENT ce JSON valide, sans backticks, sans texte avant ou après :
       "name": "Nom du projet",
       "description": "Description reformulée pour ce qui est pertinent pour l'offre",
       "technologies": "tech1, tech2",
-      "dates": "année"
+      "dates": "année",
+      "url": "url du projet si disponible dans le profil, sinon chaîne vide"
     }
   ],
   "languages": [{ "language": "Français", "level": "Natif" }],
@@ -84,17 +90,18 @@ Retourne UNIQUEMENT ce JSON valide, sans backticks, sans texte avant ou après :
 }
 
 Règles ABSOLUES :
-- Projets : inclure TOUS les projets du profil, descriptions reformulées
+- Projets : inclure TOUS les projets du profil, descriptions reformulées, URLs conservées
 - Langues : reprendre TOUTES les langues
 - Loisirs : reprendre TOUS les centres d'intérêt
 - Certifications : reprendre TOUTES les certifications
+- Liens sociaux (linkedin, github, portfolio, socialLinks) : reprendre EXACTEMENT depuis le profil, ne pas modifier les URLs
 - Si un le Candidat a une compétence ou expérience qui n'est PAS pertinente pour l'offre, tu peux la reformuler pour la rendre pertinente, mais tu NE DOIS PAS la supprimer complètement du CV.
--Si UN Candidat n'a pas les compétences demandées dans l'offre, tu dois faire de ton mieux pour reformuler ses expériences et compétences de manière à montrer qu'il a des compétences transférables ou une capacité d'apprentissage rapide. NE SUPPRIME PAS les compétences ou expériences du profil, même si elles ne correspondent pas parfaitement à l'offre — reformule-les pour les rendre aussi pertinentes que possible.
--Si le candidat n'a pas d'expérience ou de compétence directement liée à une exigence de l'offre, tu peux reformuler ses expériences passées pour mettre en avant des compétences transférables ou des réalisations qui démontrent sa capacité à apprendre rapidement et à s'adapter. Par exemple, si l'offre demande une compétence spécifique que le candidat n'a pas, mais qu'il a une expérience dans un domaine similaire, tu peux reformuler cette expérience pour montrer comment les compétences acquises sont pertinentes pour le poste visé.
+- Si UN Candidat n'a pas les compétences demandées dans l'offre, tu dois faire de ton mieux pour reformuler ses expériences et compétences de manière à montrer qu'il a des compétences transférables ou une capacité d'apprentissage rapide.
 - Si une section est vide dans le profil, retourner un tableau vide []
 - Le résumé et les bullets d'expérience DOIVENT être différents du profil brut
 - Retourne UNIQUEMENT le JSON, rien d'autre.`;
 };
+
 export type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
@@ -154,7 +161,10 @@ Compétences : ${profile.skills?.join(', ')}
 Expériences : ${profile.experiences?.map((e: any) => `${e.position} chez ${e.company}`).join('; ')}
 Projets : ${profile.projects?.map((p: any) => p.name).join(', ') || 'aucun'}
 Langues : ${profile.languages?.map((l: any) => `${l.language} (${l.level})`).join(', ') || '-'}
-Loisirs : ${profile.interests?.join(', ') || '-'}` : 'Profil non rempli.'}
+Loisirs : ${profile.interests?.join(', ') || '-'}
+GitHub : ${profile.github || '-'}
+LinkedIn : ${profile.linkedin || '-'}
+Portfolio : ${profile.portfolio || '-'}` : 'Profil non rempli.'}
 
 ${jobDescription ? `OFFRE CIBLE :\n${jobDescription.slice(0, 800)}` : "Pas d'offre."}
 
