@@ -88,7 +88,9 @@ Règles ABSOLUES :
 - Langues : reprendre TOUTES les langues
 - Loisirs : reprendre TOUS les centres d'intérêt
 - Certifications : reprendre TOUTES les certifications
-- Ne jamais inventer des expériences ou compétences que le candidat n'a pas
+- Si un le Candidat a une compétence ou expérience qui n'est PAS pertinente pour l'offre, tu peux la reformuler pour la rendre pertinente, mais tu NE DOIS PAS la supprimer complètement du CV.
+-Si UN Candidat n'a pas les compétences demandées dans l'offre, tu dois faire de ton mieux pour reformuler ses expériences et compétences de manière à montrer qu'il a des compétences transférables ou une capacité d'apprentissage rapide. NE SUPPRIME PAS les compétences ou expériences du profil, même si elles ne correspondent pas parfaitement à l'offre — reformule-les pour les rendre aussi pertinentes que possible.
+-Si le candidat n'a pas d'expérience ou de compétence directement liée à une exigence de l'offre, tu peux reformuler ses expériences passées pour mettre en avant des compétences transférables ou des réalisations qui démontrent sa capacité à apprendre rapidement et à s'adapter. Par exemple, si l'offre demande une compétence spécifique que le candidat n'a pas, mais qu'il a une expérience dans un domaine similaire, tu peux reformuler cette expérience pour montrer comment les compétences acquises sont pertinentes pour le poste visé.
 - Si une section est vide dans le profil, retourner un tableau vide []
 - Le résumé et les bullets d'expérience DOIVENT être différents du profil brut
 - Retourne UNIQUEMENT le JSON, rien d'autre.`;
