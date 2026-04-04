@@ -4,12 +4,20 @@
 export type CVData = {
   fullName: string;
   title: string;
-  contact: { email: string; phone: string; location: string; linkedin?: string };
+  contact: {
+    email: string;
+    phone: string;
+    location: string;
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+    socialLinks?: { label: string; url: string }[];
+  };
   professionalSummary: string;
   experiences: { company: string; position: string; dates: string; bullets: string[] }[];
   skills: string[];
   education: { school: string; degree: string; dates: string }[];
-  projects?: { name: string; description: string; technologies?: string; dates?: string }[];
+  projects?: { name: string; description: string; technologies?: string; dates?: string; url?: string }[];
   languages?: { language: string; level: string }[];
   certifications?: { name: string; issuer?: string; date?: string }[];
   interests?: string[];
@@ -40,12 +48,12 @@ export const DEFAULT_CV_STYLE: CVStyle = {
 export type TemplateId = 'classic' | 'modern' | 'minimal' | 'executive' | 'creative' | 'tech';
 
 export const TEMPLATES: { id: TemplateId; label: string; description: string; accent: string }[] = [
-  { id: 'classic',   label: 'Classique',   description: 'Sérieux, serif, idéal RH/finance',    accent: '#1e293b' },
-  { id: 'modern',    label: 'Moderne',     description: 'Deux colonnes, épuré, tech/startup',   accent: '#3b82f6' },
-  { id: 'minimal',   label: 'Minimaliste', description: 'Typographie soignée, création/design', accent: '#b45309' },
-  { id: 'executive', label: 'Executive',   description: 'Prestige, bleu marine, top management',accent: '#1d3461' },
-  { id: 'creative',  label: 'Créatif',     description: 'Graphique, couleur, marketing/UX',     accent: '#7c3aed' },
-  { id: 'tech',      label: 'Tech',        description: 'Dark sidebar, monospace, dev/data',     accent: '#059669' },
+  { id: 'classic',   label: 'Classique',   description: 'Sérieux, serif, idéal RH/finance',     accent: '#1e293b' },
+  { id: 'modern',    label: 'Moderne',     description: 'Deux colonnes, épuré, tech/startup',    accent: '#3b82f6' },
+  { id: 'minimal',   label: 'Minimaliste', description: 'Typographie soignée, création/design',  accent: '#b45309' },
+  { id: 'executive', label: 'Executive',   description: 'Prestige, bleu marine, top management', accent: '#1d3461' },
+  { id: 'creative',  label: 'Créatif',     description: 'Graphique, couleur, marketing/UX',      accent: '#7c3aed' },
+  { id: 'tech',      label: 'Tech',        description: 'Dark sidebar, monospace, dev/data',      accent: '#059669' },
 ];
 
 export function buildCVHtml(cv: CVData, template: TemplateId, style?: Partial<CVStyle>): string {
@@ -60,10 +68,37 @@ export function buildCVHtml(cv: CVData, template: TemplateId, style?: Partial<CV
   }
 }
 
-// ─── helpers style ────────────────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────────────────────
 function ff(s: CVStyle, fallback: string) { return s.fontFamily === 'default' ? fallback : s.fontFamily; }
 function ac(s: CVStyle, fallback: string) { return s.accentColor || fallback; }
 function tc(s: CVStyle, fallback: string) { return s.textColor   || fallback; }
+
+/** Génère les liens sociaux pour le header — style "pill" ou inline selon le param */
+function buildSocialLinks(cv: CVData, color: string, bg = '', radius = '0'): string {
+  const items: string[] = [];
+  if (cv.contact?.linkedin)  items.push(`<a href="${cv.contact.linkedin}" style="color:${color};text-decoration:none;${bg ? `background:${bg};padding:3px 10px;border-radius:${radius};` : ''}">in ${shortenUrl(cv.contact.linkedin)}</a>`);
+  if (cv.contact?.github)    items.push(`<a href="${cv.contact.github}"   style="color:${color};text-decoration:none;${bg ? `background:${bg};padding:3px 10px;border-radius:${radius};` : ''}">⌥ ${shortenUrl(cv.contact.github)}</a>`);
+  if (cv.contact?.portfolio) items.push(`<a href="${cv.contact.portfolio}" style="color:${color};text-decoration:none;${bg ? `background:${bg};padding:3px 10px;border-radius:${radius};` : ''}">🌐 ${shortenUrl(cv.contact.portfolio)}</a>`);
+  cv.contact?.socialLinks?.forEach(l => {
+    if (l.url) items.push(`<a href="${l.url}" style="color:${color};text-decoration:none;${bg ? `background:${bg};padding:3px 10px;border-radius:${radius};` : ''}">🔗 ${l.label || shortenUrl(l.url)}</a>`);
+  });
+  return items.join('');
+}
+
+function shortenUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return (u.hostname + u.pathname).replace(/\/$/, '').replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
+/** Lien projet cliquable */
+function projectLink(url: string | undefined, accent: string): string {
+  if (!url) return '';
+  return `<a href="${url}" style="display:inline-block;margin-top:3px;font-size:8pt;color:${accent};text-decoration:none;border:1px solid ${accent};border-radius:3px;padding:1px 7px;">🔗 Voir le projet</a>`;
+}
 
 // ─── CLASSIQUE ────────────────────────────────────────────────────────────────
 function buildClassicHtml(cv: CVData, s: CVStyle): string {
@@ -78,19 +113,21 @@ function buildClassicHtml(cv: CVData, s: CVStyle): string {
       ${c}
     </div>`;
 
+  const socialLine = buildSocialLinks(cv, '#64748b');
+
   return `<div style="font-family:${font};color:${text};background:white;padding:${s.marginV}px ${s.marginH}px;max-width:794px;margin:0 auto;font-size:${s.fontSize}pt;line-height:${s.lineHeight};">
   <div style="border-bottom:2px solid ${accent};padding-bottom:10px;margin-bottom:${sp}px;">
     <h1 style="font-size:22pt;font-weight:bold;margin:0 0 2px 0;color:${accent};">${cv.fullName}</h1>
     <p style="font-size:11pt;color:#64748b;margin:0 0 6px 0;font-style:italic;">${cv.title}</p>
     <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:8.5pt;color:#64748b;">
-      ${cv.contact?.email    ? `<span>✉ ${cv.contact.email}</span>`    : ''}
-      ${cv.contact?.phone    ? `<span>✆ ${cv.contact.phone}</span>`    : ''}
-      ${cv.contact?.location ? `<span>📍 ${cv.contact.location}</span>`: ''}
-      ${cv.contact?.linkedin ? `<span>🔗 ${cv.contact.linkedin}</span>`: ''}
+      ${cv.contact?.email    ? `<span>✉ ${cv.contact.email}</span>` : ''}
+      ${cv.contact?.phone    ? `<span>✆ ${cv.contact.phone}</span>` : ''}
+      ${cv.contact?.location ? `<span>📍 ${cv.contact.location}</span>` : ''}
+      ${socialLine}
     </div>
   </div>
   ${cv.professionalSummary ? cs('Profil professionnel', `<p style="margin:0;color:#334155;font-size:${s.fontSize - 0.5}pt;line-height:${s.lineHeight};">${cv.professionalSummary}</p>`) : ''}
-  ${cv.experiences?.length  ? cs('Expériences professionnelles', cv.experiences.map(e =>
+  ${cv.experiences?.length ? cs('Expériences professionnelles', cv.experiences.map(e =>
     `<div style="margin-bottom:${Math.round(sp * 0.75)}px;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;">
         <span><strong style="color:${accent};">${e.position}</strong> <span style="color:#64748b;">· ${e.company}</span></span>
@@ -108,8 +145,9 @@ function buildClassicHtml(cv: CVData, s: CVStyle): string {
       </div>
       <p style="margin:2px 0;color:#334155;font-size:${s.fontSize - 0.5}pt;">${p.description}</p>
       ${p.technologies ? `<p style="margin:1px 0;font-size:8.5pt;color:#64748b;font-style:italic;">${p.technologies}</p>` : ''}
+      ${projectLink(p.url, accent)}
     </div>`).join('')) : ''}
-  ${cv.skills?.length    ? cs('Compétences', `<p style="margin:0;color:#334155;font-size:${s.fontSize - 0.5}pt;">${cv.skills.join(' · ')}</p>`) : ''}
+  ${cv.skills?.length ? cs('Compétences', `<p style="margin:0;color:#334155;font-size:${s.fontSize - 0.5}pt;">${cv.skills.join(' · ')}</p>`) : ''}
   ${cv.education?.length ? cs('Formation', cv.education.map(e =>
     `<div style="display:flex;justify-content:space-between;margin-bottom:4px;">
       <span><strong style="font-size:${s.fontSize - 0.5}pt;">${e.degree}</strong> <span style="color:#64748b;font-size:${s.fontSize - 1}pt;">· ${e.school}</span></span>
@@ -152,6 +190,10 @@ function buildModernHtml(cv: CVData, s: CVStyle): string {
       </h2>${c}
     </div>`;
 
+  const socialLinks = cv.contact?.linkedin || cv.contact?.github || cv.contact?.portfolio || cv.contact?.socialLinks?.length
+    ? mss('Liens', buildSocialLinks(cv, '#93c5fd').split('</a>').filter(Boolean).map(l => `<div style="margin-bottom:4px;font-size:8.5pt;word-break:break-all;">${l}</a></div>`).join(''))
+    : '';
+
   return `<div style="font-family:${font};background:white;display:flex;width:794px;min-height:1123px;font-size:${s.fontSize}pt;line-height:${s.lineHeight};">
   <div style="width:255px;background:#1e293b;color:white;padding:${s.marginV}px ${Math.round(s.marginH * 0.65)}px;flex-shrink:0;">
     <h1 style="font-size:17pt;font-weight:bold;margin:0 0 5px 0;line-height:1.2;color:white;">${cv.fullName}</h1>
@@ -161,6 +203,7 @@ function buildModernHtml(cv: CVData, s: CVStyle): string {
       ${cv.contact?.phone    ? `<div style="margin-bottom:5px;font-size:8.5pt;color:#cbd5e1;">✆ ${cv.contact.phone}</div>` : ''}
       ${cv.contact?.location ? `<div style="font-size:8.5pt;color:#cbd5e1;">📍 ${cv.contact.location}</div>` : ''}
     `)}
+    ${socialLinks}
     ${cv.skills?.length ? mss('Compétences', cv.skills.map(sk =>
       `<span style="display:inline-block;background:rgba(255,255,255,0.1);color:#e2e8f0;font-size:8pt;padding:2px 7px;border-radius:4px;margin:2px 2px 2px 0;">${sk}</span>`
     ).join('')) : ''}
@@ -193,7 +236,8 @@ function buildModernHtml(cv: CVData, s: CVStyle): string {
           ${p.dates ? `<span style="font-size:8pt;color:#94a3b8;">${p.dates}</span>` : ''}
         </div>
         <p style="margin:0 0 4px 0;font-size:${s.fontSize - 0.5}pt;color:#475569;">${p.description}</p>
-        ${p.technologies ? `<p style="margin:0;font-size:8pt;color:${accent};font-style:italic;">${p.technologies}</p>` : ''}
+        ${p.technologies ? `<p style="margin:0 0 4px 0;font-size:8pt;color:${accent};font-style:italic;">${p.technologies}</p>` : ''}
+        ${projectLink(p.url, accent)}
       </div>`).join('')) : ''}
   </div>
 </div>`;
@@ -212,17 +256,24 @@ function buildMinimalHtml(cv: CVData, s: CVStyle): string {
       ${c}
     </div>`;
 
+  const hasSocial = cv.contact?.linkedin || cv.contact?.github || cv.contact?.portfolio || cv.contact?.socialLinks?.length;
+
   return `<div style="font-family:${font};color:${text};background:white;padding:${s.marginV + 8}px ${s.marginH + 8}px;max-width:794px;margin:0 auto;font-size:${s.fontSize}pt;line-height:${s.lineHeight};">
-  <div style="margin-bottom:${sp + 6}px;border-bottom:1px solid #e7e5e4;padding-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end;">
-    <div>
-      <h1 style="font-size:24pt;font-weight:normal;margin:0;color:#1c1917;letter-spacing:-0.5px;">${cv.fullName}</h1>
-      <p style="font-size:8pt;text-transform:uppercase;letter-spacing:0.2em;color:${accent};margin:6px 0 0 0;">${cv.title}</p>
+  <div style="margin-bottom:${sp + 6}px;border-bottom:1px solid #e7e5e4;padding-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+      <div>
+        <h1 style="font-size:24pt;font-weight:normal;margin:0;color:#1c1917;letter-spacing:-0.5px;">${cv.fullName}</h1>
+        <p style="font-size:8pt;text-transform:uppercase;letter-spacing:0.2em;color:${accent};margin:6px 0 0 0;">${cv.title}</p>
+      </div>
+      <div style="text-align:right;font-size:8pt;color:#78716c;line-height:1.8;">
+        ${cv.contact?.email    ? `<div>${cv.contact.email}</div>` : ''}
+        ${cv.contact?.phone    ? `<div>${cv.contact.phone}</div>` : ''}
+        ${cv.contact?.location ? `<div>${cv.contact.location}</div>` : ''}
+      </div>
     </div>
-    <div style="text-align:right;font-size:8pt;color:#78716c;line-height:1.8;">
-      ${cv.contact?.email    ? `<div>${cv.contact.email}</div>`    : ''}
-      ${cv.contact?.phone    ? `<div>${cv.contact.phone}</div>`    : ''}
-      ${cv.contact?.location ? `<div>${cv.contact.location}</div>` : ''}
-    </div>
+    ${hasSocial ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:14px;font-size:8pt;color:#78716c;">
+      ${buildSocialLinks(cv, '#78716c')}
+    </div>` : ''}
   </div>
   ${cv.professionalSummary ? `<div style="margin-bottom:${sp + 4}px;border-left:2px solid ${accent};padding-left:12px;"><p style="margin:0;color:#57534e;font-style:italic;font-size:${s.fontSize - 0.5}pt;">${cv.professionalSummary}</p></div>` : ''}
   ${cv.experiences?.length ? mins('Expériences', cv.experiences.map(e =>
@@ -240,7 +291,8 @@ function buildMinimalHtml(cv: CVData, s: CVStyle): string {
         ${p.dates ? `<span style="font-size:8.5pt;color:#a8a29e;">${p.dates}</span>` : ''}
       </div>
       <p style="margin:2px 0;color:#57534e;font-size:${s.fontSize - 0.5}pt;">${p.description}</p>
-      ${p.technologies ? `<p style="margin:0;font-size:8.5pt;color:${accent};font-style:italic;">${p.technologies}</p>` : ''}
+      ${p.technologies ? `<p style="margin:0 0 2px 0;font-size:8.5pt;color:${accent};font-style:italic;">${p.technologies}</p>` : ''}
+      ${projectLink(p.url, accent)}
     </div>`).join('')) : ''}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:${sp}px;">
     ${cv.skills?.length ? `<div>
@@ -282,17 +334,19 @@ function buildExecutiveHtml(cv: CVData, s: CVStyle): string {
       ${c}
     </div>`;
 
+  const hasSocial = cv.contact?.linkedin || cv.contact?.github || cv.contact?.portfolio || cv.contact?.socialLinks?.length;
+
   return `<div style="font-family:${font};color:#1a1a2e;background:white;padding:0;max-width:794px;margin:0 auto;font-size:${s.fontSize}pt;line-height:${s.lineHeight};">
   <div style="background:${accent};color:white;padding:${s.marginV + 4}px ${s.marginH + 8}px ${s.marginV}px;">
     <div style="border-bottom:1px solid rgba(255,255,255,0.25);padding-bottom:14px;margin-bottom:14px;">
       <h1 style="font-size:26pt;font-weight:normal;margin:0;letter-spacing:1px;color:white;">${cv.fullName}</h1>
       <p style="color:#93c5fd;margin:5px 0 0 0;letter-spacing:3px;text-transform:uppercase;font-size:8.5pt;">${cv.title}</p>
     </div>
-    <div style="display:flex;gap:24px;font-size:8.5pt;color:rgba(255,255,255,0.75);">
-      ${cv.contact?.email    ? `<span>✉ ${cv.contact.email}</span>`    : ''}
-      ${cv.contact?.phone    ? `<span>✆ ${cv.contact.phone}</span>`    : ''}
-      ${cv.contact?.location ? `<span>📍 ${cv.contact.location}</span>`: ''}
-      ${cv.contact?.linkedin ? `<span>🔗 ${cv.contact.linkedin}</span>`: ''}
+    <div style="display:flex;flex-wrap:wrap;gap:20px;font-size:8.5pt;color:rgba(255,255,255,0.75);">
+      ${cv.contact?.email    ? `<span>✉ ${cv.contact.email}</span>` : ''}
+      ${cv.contact?.phone    ? `<span>✆ ${cv.contact.phone}</span>` : ''}
+      ${cv.contact?.location ? `<span>📍 ${cv.contact.location}</span>` : ''}
+      ${hasSocial ? buildSocialLinks(cv, 'rgba(255,255,255,0.75)') : ''}
     </div>
   </div>
   <div style="padding:${s.marginV + 4}px ${s.marginH + 8}px;">
@@ -321,7 +375,8 @@ function buildExecutiveHtml(cv: CVData, s: CVStyle): string {
         <div style="border-left:1px solid #e2e8f0;padding-left:14px;">
           <strong style="color:${accent};">${p.name}</strong>
           <p style="margin:3px 0;color:#334155;font-size:${s.fontSize - 0.5}pt;">${p.description}</p>
-          ${p.technologies ? `<p style="margin:0;font-size:8pt;color:#64748b;font-style:italic;">${p.technologies}</p>` : ''}
+          ${p.technologies ? `<p style="margin:0 0 3px 0;font-size:8pt;color:#64748b;font-style:italic;">${p.technologies}</p>` : ''}
+          ${projectLink(p.url, accent)}
         </div>
       </div>`).join('')) : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding-top:${sp}px;border-top:1px solid #e2e8f0;">
@@ -359,16 +414,18 @@ function buildCreativeHtml(cv: CVData, s: CVStyle): string {
       ${c}
     </div>`;
 
+  const hasSocial = cv.contact?.linkedin || cv.contact?.github || cv.contact?.portfolio || cv.contact?.socialLinks?.length;
+
   return `<div style="font-family:${font};background:white;max-width:794px;margin:0 auto;font-size:${s.fontSize}pt;line-height:${s.lineHeight};color:#1e1b4b;">
   <div style="background:linear-gradient(135deg,${accent} 0%,${accent2} 100%);padding:${s.marginV + 8}px ${s.marginH + 8}px;color:white;position:relative;overflow:hidden;">
     <div style="position:absolute;top:-30px;right:-30px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.07);"></div>
     <h1 style="font-size:24pt;font-weight:900;margin:0 0 5px 0;letter-spacing:-1px;color:white;">${cv.fullName}</h1>
     <p style="font-size:10.5pt;font-weight:500;color:rgba(255,255,255,0.85);margin:0 0 14px 0;">${cv.title}</p>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:8pt;color:rgba(255,255,255,0.8);">
-      ${cv.contact?.email    ? `<span style="background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;">✉ ${cv.contact.email}</span>`    : ''}
-      ${cv.contact?.phone    ? `<span style="background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;">✆ ${cv.contact.phone}</span>`    : ''}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:8pt;color:rgba(255,255,255,0.9);">
+      ${cv.contact?.email    ? `<span style="background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;">✉ ${cv.contact.email}</span>` : ''}
+      ${cv.contact?.phone    ? `<span style="background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;">✆ ${cv.contact.phone}</span>` : ''}
       ${cv.contact?.location ? `<span style="background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;">📍 ${cv.contact.location}</span>` : ''}
-      ${cv.contact?.linkedin ? `<span style="background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;">🔗 ${cv.contact.linkedin}</span>` : ''}
+      ${hasSocial ? buildSocialLinks(cv, 'rgba(255,255,255,0.9)', 'rgba(255,255,255,0.15)', '20px') : ''}
     </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 230px;background:white;">
@@ -392,8 +449,9 @@ function buildCreativeHtml(cv: CVData, s: CVStyle): string {
             <strong style="color:${accent};">${p.name}</strong>
             ${p.dates ? `<span style="font-size:8pt;color:#9ca3af;">${p.dates}</span>` : ''}
           </div>
-          <p style="margin:0 0 3px 0;font-size:${s.fontSize - 0.5}pt;color:#4b5563;">${p.description}</p>
-          ${p.technologies ? `<p style="margin:0;font-size:8pt;color:${accent2};font-style:italic;">${p.technologies}</p>` : ''}
+          <p style="margin:0 0 4px 0;font-size:${s.fontSize - 0.5}pt;color:#4b5563;">${p.description}</p>
+          ${p.technologies ? `<p style="margin:0 0 4px 0;font-size:8pt;color:${accent2};font-style:italic;">${p.technologies}</p>` : ''}
+          ${projectLink(p.url, accent)}
         </div>`).join('')) : ''}
     </div>
     <div style="background:#faf5ff;padding:${s.marginV}px ${Math.round(s.marginH * 0.65)}px;border-left:1px solid #e9d5ff;">
@@ -436,18 +494,25 @@ function buildTechHtml(cv: CVData, s: CVStyle): string {
       ${c}
     </div>`;
 
+  const hasSocial = cv.contact?.linkedin || cv.contact?.github || cv.contact?.portfolio || cv.contact?.socialLinks?.length;
+
   return `<div style="font-family:${font};background:white;max-width:794px;margin:0 auto;font-size:${s.fontSize - 0.5}pt;line-height:${s.lineHeight};color:#1a1a1a;">
-  <div style="background:#0f172a;color:#e2e8f0;padding:${s.marginV}px ${s.marginH}px;display:flex;justify-content:space-between;align-items:flex-end;">
-    <div>
-      <div style="font-size:9.5pt;color:${accent};margin-bottom:5px;">$ whoami</div>
-      <h1 style="font-size:20pt;font-weight:bold;margin:0;color:white;letter-spacing:1px;">${cv.fullName}</h1>
-      <p style="font-size:9.5pt;color:#34d399;margin:3px 0 0 0;"># ${cv.title}</p>
+  <div style="background:#0f172a;color:#e2e8f0;padding:${s.marginV}px ${s.marginH}px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+      <div>
+        <div style="font-size:9.5pt;color:${accent};margin-bottom:5px;">$ whoami</div>
+        <h1 style="font-size:20pt;font-weight:bold;margin:0;color:white;letter-spacing:1px;">${cv.fullName}</h1>
+        <p style="font-size:9.5pt;color:#34d399;margin:3px 0 0 0;"># ${cv.title}</p>
+      </div>
+      <div style="text-align:right;font-size:8pt;color:#94a3b8;line-height:1.8;">
+        ${cv.contact?.email    ? `<div>→ ${cv.contact.email}</div>` : ''}
+        ${cv.contact?.phone    ? `<div>→ ${cv.contact.phone}</div>` : ''}
+        ${cv.contact?.location ? `<div>→ ${cv.contact.location}</div>` : ''}
+      </div>
     </div>
-    <div style="text-align:right;font-size:8pt;color:#94a3b8;line-height:1.8;">
-      ${cv.contact?.email    ? `<div>→ ${cv.contact.email}</div>`    : ''}
-      ${cv.contact?.phone    ? `<div>→ ${cv.contact.phone}</div>`    : ''}
-      ${cv.contact?.location ? `<div>→ ${cv.contact.location}</div>` : ''}
-    </div>
+    ${hasSocial ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:12px;font-size:8pt;color:#34d399;">
+      ${buildSocialLinks(cv, '#34d399')}
+    </div>` : ''}
   </div>
   <div style="display:grid;grid-template-columns:1fr 215px;">
     <div style="padding:${s.marginV}px ${s.marginH}px;border-right:1px solid #e2e8f0;">
@@ -467,7 +532,8 @@ function buildTechHtml(cv: CVData, s: CVStyle): string {
             ${p.dates ? `<span style="font-size:7.5pt;color:#94a3b8;">${p.dates}</span>` : ''}
           </div>
           <p style="margin:0 0 3px 0;color:#374151;font-size:${s.fontSize - 0.5}pt;">${p.description}</p>
-          ${p.technologies ? `<p style="margin:0;font-size:8pt;color:${accent};font-style:italic;">${p.technologies}</p>` : ''}
+          ${p.technologies ? `<p style="margin:0 0 3px 0;font-size:8pt;color:${accent};font-style:italic;">${p.technologies}</p>` : ''}
+          ${projectLink(p.url, accent)}
         </div>`).join('')) : ''}
     </div>
     <div style="padding:${s.marginV}px ${Math.round(s.marginH * 0.6)}px;background:#f8fafc;">
