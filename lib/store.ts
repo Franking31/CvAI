@@ -7,10 +7,10 @@ export type AIProvider = 'gemini' | 'groq';
 
 export const AI_PROVIDERS: Record<AIProvider, { label: string; models: string[]; defaultModel: string }> = {
   gemini: {
-  label: 'Google Gemini',
-  models: ['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-pro'],
-  defaultModel: 'gemini-2.0-flash',
-},
+    label: 'Google Gemini',
+    models: ['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-pro'],
+    defaultModel: 'gemini-2.0-flash',
+  },
   groq: {
     label: 'Groq',
     models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
@@ -45,20 +45,18 @@ type CVStore = {
   aiProvider: AIProvider;
   aiModel: string;
   jobUrl: string;
-  
-  
 
   setProfile: (profile: UserProfileForm) => void;
   setJobDescription: (desc: string) => void;
   setGeneratedCV: (cv: any) => void;
   setKeywordAnalysis: (analysis: KeywordAnalysis) => void;
   addMessage: (message: Omit<Message, 'timestamp'>) => void;
+  setConversationHistory: (history: Message[]) => void;
   clearConversation: () => void;
   resetAll: () => void;
   setAIProvider: (provider: AIProvider) => void;
   setAIModel: (model: string) => void;
   setJobUrl: (url: string) => void;
-  
 };
 
 export const useCVStore = create<CVStore>()(
@@ -87,6 +85,8 @@ export const useCVStore = create<CVStore>()(
           ],
         })),
 
+      setConversationHistory: (history) => set({ conversationHistory: history }),
+
       clearConversation: () => set({ conversationHistory: [] }),
 
       setAIProvider: (provider) =>
@@ -96,8 +96,10 @@ export const useCVStore = create<CVStore>()(
 
       resetAll: () =>
         set({
+          profile: null,
           generatedCV: null,
           jobDescription: '',
+          jobUrl: '',
           keywordAnalysis: null,
           conversationHistory: [],
         }),

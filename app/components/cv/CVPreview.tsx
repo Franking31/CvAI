@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
-  Download, X, Plus, Trash2, ChevronDown, ChevronUp, Check, Pencil, Palette, RotateCcw,
+  Download, X, Plus, Trash2, ChevronDown, ChevronUp, Check, Pencil, Palette, RotateCcw, Loader2, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { buildCVHtml, TEMPLATES, CVData, TemplateId, CVStyle, DEFAULT_CV_STYLE } from './CVTemplates';
@@ -51,24 +51,66 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
   const html = buildCVHtml(cv, template, cvStyle);
   const updateStyle = (patch: Partial<CVStyle>) => setCvStyle(prev => ({ ...prev, ...patch }));
 
-  // ─── Export PDF ──────────────────────────────────────────────────────────
-  const handleExport = useCallback(() => {
+  // ─── Aperçu dans nouvel onglet ───────────────────────────────────────────
+  const handlePreview = useCallback(() => {
     const win = window.open('', '_blank');
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html><head>
       <meta charset="utf-8">
-      <title>CV — ${cv.fullName}</title>
+      <title>Aperçu CV — ${cv.fullName}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: white; }
-        @media print {
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          @page { margin: 0; size: A4; }
-        }
+        body { background: #f1f5f9; display: flex; justify-content: center; padding: 32px 16px; }
+        .page { background: white; width: 794px; box-shadow: 0 4px 32px rgba(0,0,0,0.15); }
+        a { color: inherit; text-decoration: none; }
       </style>
-    </head><body>${html}<script>window.onload=()=>{window.print();}<\/script></body></html>`);
+    </head><body><div class="page">${html}</div></body></html>`);
     win.document.close();
-    toast.success('Impression / PDF ouverts !');
+  }, [cv, html]);
+
+  // ─── Export PDF ──────────────────────────────────────────────────────────
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setExporting(true);
+    const toastId = toast.loading('Génération du PDF en cours…');
+    try {
+      const res = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html,
+          fileName: `CV_${cv.fullName.replace(/\s+/g, '_')}`,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Erreur serveur');
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `CV_${cv.fullName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('PDF téléchargé !', { id: toastId, description: 'Texte sélectionnable et liens cliquables.' });
+    } catch (err: any) {
+      console.error('[export-pdf]', err);
+      toast.error('Génération PDF indisponible', {
+        id: toastId,
+        description: 'Ouverture en mode impression — utilisez Ctrl+P → Enregistrer en PDF.',
+      });
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>CV — ${cv.fullName}</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{background:white;}a{color:inherit;text-decoration:none;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}@page{margin:0;size:A4;}}</style></head><body>${html}</body></html>`);
+        win.document.close();
+      }
+    } finally {
+      setExporting(false);
+    }
   }, [cv, html]);
 
   // ─── Helpers édition ─────────────────────────────────────────────────────
@@ -143,9 +185,16 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
           {styleMode ? 'Fermer le style' : 'Personnaliser le style'}
         </Button>
 
-        <Button size="sm" onClick={handleExport} className="ml-auto">
-          <Download className="w-4 h-4 mr-2" /> Exporter en PDF
-        </Button>
+        <div className="ml-auto flex gap-2">
+          <Button size="sm" variant="outline" onClick={handlePreview}>
+            <Eye className="w-4 h-4 mr-2" />Aperçu
+          </Button>
+          <Button size="sm" onClick={handleExport} disabled={exporting}>
+            {exporting
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Génération PDF…</>
+              : <><Download className="w-4 h-4 mr-2" />Télécharger PDF</>}
+          </Button>
+        </div>
       </div>
 
       {/* ── Panneau de style ─────────────────────────────────────────────── */}
