@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileText, User, Briefcase, Sparkles, MessageSquare, LogOut, LogIn, Cloud, CloudOff } from 'lucide-react';
+import { FileText, User, Briefcase, Sparkles, MessageSquare, LogOut, LogIn, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { useState } from 'react';
@@ -51,43 +51,44 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Auth zone */}
-          {!loading && (
-            <div className="flex items-center gap-2">
-              {user ? (
-                <>
-                  {/* Indicateur de sync */}
-                  <div className="hidden sm:flex items-center gap-1.5 text-xs text-green-600 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
-                    <Cloud className="w-3 h-3" />
-                    <span>Sync activé</span>
-                  </div>
-                  {/* Email tronqué */}
-                  <span className="hidden md:block text-xs text-muted-foreground max-w-[140px] truncate">
-                    {user.email}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={signOut}
-                    className="text-muted-foreground hover:text-foreground gap-1.5"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline">Déconnexion</span>
-                  </Button>
-                </>
-              ) : (
+          {/* Auth zone — toujours rendue, même pendant le loading */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                {/* Indicateur de sync */}
+                <div className="hidden sm:flex items-center gap-1.5 text-xs text-green-600 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+                  <Cloud className="w-3 h-3" />
+                  <span>Sync activé</span>
+                </div>
+                {/* Email tronqué */}
+                <span className="hidden md:block text-xs text-muted-foreground max-w-[140px] truncate">
+                  {user.email}
+                </span>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setShowAuth(true)}
-                  className="gap-1.5"
+                  onClick={signOut}
+                  className="text-muted-foreground hover:text-foreground gap-1.5"
                 >
-                  <LogIn className="w-4 h-4" />
-                  <span>Connexion</span>
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Déconnexion</span>
                 </Button>
-              )}
-            </div>
-          )}
+              </>
+            ) : loading ? (
+              // Placeholder pendant le chargement initial — évite le flash
+              <div className="w-24 h-7 rounded-md bg-muted animate-pulse" />
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAuth(true)}
+                className="gap-1.5"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Connexion</span>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
