@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase';
+import { getSiteUrl } from '@/lib/site-url';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,14 +37,14 @@ export default function AuthModal({ onClose, reason }: Props) {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${location.origin}/auth/callback` },
+          options: { emailRedirectTo: `${getSiteUrl()}/auth/callback` },
         });
         if (error) throw error;
         toast.success('Compte créé ! Vérifie ton email pour confirmer.');
         onClose();
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${location.origin}/auth/callback?next=/dashboard/profile`,
+          redirectTo: `${getSiteUrl()}/auth/callback?next=/dashboard/profile`,
         });
         if (error) throw error;
         toast.success('Email de réinitialisation envoyé !');
@@ -59,7 +60,7 @@ export default function AuthModal({ onClose, reason }: Props) {
   const handleGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${location.origin}/auth/callback` },
+      options: { redirectTo: `${getSiteUrl()}/auth/callback` },
     });
   };
 
