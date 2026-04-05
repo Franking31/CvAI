@@ -94,10 +94,11 @@ function shortenUrl(url: string): string {
   }
 }
 
-/** Lien projet cliquable */
+/** Lien projet cliquable + URL visible en texte */
 function projectLink(url: string | undefined, accent: string): string {
   if (!url) return '';
-  return `<a href="${url}" style="display:inline-block;margin-top:3px;font-size:8pt;color:${accent};text-decoration:none;border:1px solid ${accent};border-radius:3px;padding:1px 7px;">🔗 Voir le projet</a>`;
+  const shortened = shortenUrl(url);
+  return `<div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap;"><a href="${url}" style="display:inline-block;font-size:8pt;color:${accent};text-decoration:none;border:1px solid ${accent};border-radius:3px;padding:1px 7px;">&#128279; Voir le projet</a><span style="font-size:7.5pt;color:#64748b;font-family:monospace;">${shortened}</span></div>`;
 }
 
 // ─── CLASSIQUE ────────────────────────────────────────────────────────────────
