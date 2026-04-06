@@ -40,6 +40,8 @@ type CVStore = {
   profile: UserProfileForm | null;
   jobDescription: string;
   generatedCV: any | null;
+  coverLetter: string;           // ← NOUVEAU
+  photoDataUrl: string;          // ← NOUVEAU (base64 de la photo)
   keywordAnalysis: KeywordAnalysis | null;
   conversationHistory: Message[];
   aiProvider: AIProvider;
@@ -49,6 +51,8 @@ type CVStore = {
   setProfile: (profile: UserProfileForm) => void;
   setJobDescription: (desc: string) => void;
   setGeneratedCV: (cv: any) => void;
+  setCoverLetter: (letter: string) => void;   // ← NOUVEAU
+  setPhotoDataUrl: (url: string) => void;     // ← NOUVEAU
   setKeywordAnalysis: (analysis: KeywordAnalysis) => void;
   addMessage: (message: Omit<Message, 'timestamp'>) => void;
   setConversationHistory: (history: Message[]) => void;
@@ -65,6 +69,8 @@ export const useCVStore = create<CVStore>()(
       profile: null,
       jobDescription: '',
       generatedCV: null,
+      coverLetter: '',
+      photoDataUrl: '',
       keywordAnalysis: null,
       conversationHistory: [],
       aiProvider: 'gemini',
@@ -74,6 +80,8 @@ export const useCVStore = create<CVStore>()(
       setProfile: (profile) => set({ profile }),
       setJobDescription: (desc) => set({ jobDescription: desc }),
       setGeneratedCV: (cv) => set({ generatedCV: cv }),
+      setCoverLetter: (letter) => set({ coverLetter: letter }),
+      setPhotoDataUrl: (url) => set({ photoDataUrl: url }),
       setKeywordAnalysis: (analysis) => set({ keywordAnalysis: analysis }),
       setJobUrl: (url) => set({ jobUrl: url }),
 
@@ -86,7 +94,6 @@ export const useCVStore = create<CVStore>()(
         })),
 
       setConversationHistory: (history) => set({ conversationHistory: history }),
-
       clearConversation: () => set({ conversationHistory: [] }),
 
       setAIProvider: (provider) =>
@@ -102,6 +109,8 @@ export const useCVStore = create<CVStore>()(
           jobUrl: '',
           keywordAnalysis: null,
           conversationHistory: [],
+          coverLetter: '',
+          photoDataUrl: '',
         }),
     }),
     {
@@ -110,6 +119,8 @@ export const useCVStore = create<CVStore>()(
         profile: state.profile,
         jobDescription: state.jobDescription,
         generatedCV: state.generatedCV,
+        coverLetter: state.coverLetter,
+        // On ne persiste PAS photoDataUrl car c'est trop lourd pour localStorage
         keywordAnalysis: state.keywordAnalysis,
         conversationHistory: state.conversationHistory,
         aiProvider: state.aiProvider,

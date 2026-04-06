@@ -1,7 +1,7 @@
 'use client';
 // lib/use-cloud-sync.ts
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { createClient } from './supabase';
 import { useAuth } from './auth-context';
 import { useCVStore } from './store';
@@ -14,7 +14,11 @@ import { useCVStore } from './store';
 export function useCloudSync() {
   const { user } = useAuth();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const supabase = createClient();
+
+  // ✅ Fix: mémoïser le client Supabase pour éviter de le recréer à chaque render
+  // (sinon la dépendance [user, supabase] change en boucle et détruit/recrée
+  //  l'abonnement en permanence sans jamais déclencher le vrai upsert)
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!user) return;
@@ -23,7 +27,7 @@ export function useCloudSync() {
       if (timerRef.current) clearTimeout(timerRef.current);
 
       timerRef.current = setTimeout(async () => {
-        await supabase.from('user_data').upsert(
+        const { error } = await supabase.from('user_data').upsert(
           {
             user_id: user.id,
             profile: state.profile,
@@ -38,6 +42,12 @@ export function useCloudSync() {
           },
           { onConflict: 'user_id' }
         );
+
+        if (error) {
+          console.error('[cloud-sync] Erreur upsert Supabase:', error.message, error);
+        } else {
+          console.log('[cloud-sync] Données synchronisées pour', user.email);
+        }
       }, 1500);
     });
 
