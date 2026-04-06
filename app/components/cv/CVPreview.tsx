@@ -1,17 +1,18 @@
 // app/components/cv/CVPreview.tsx
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
-  Download, X, Plus, Trash2, ChevronDown, ChevronUp, Check, Pencil, Palette, RotateCcw, Loader2, Eye,
+  Download, X, Plus, Trash2, ChevronDown, ChevronUp, Check, Pencil, Palette, RotateCcw, Camera, ImageOff, Loader2, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { buildCVHtml, TEMPLATES, CVData, TemplateId, CVStyle, DEFAULT_CV_STYLE } from './CVTemplates';
+import { useCVStore } from '@/lib/store';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,15 +42,45 @@ const PALETTES = [
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
+  const { photoDataUrl, setPhotoDataUrl } = useCVStore();
   const [cv, setCv]                   = useState<CVData>(initialCv);
   const [template, setTemplate]       = useState<TemplateId>('classic');
   const [editMode, setEditMode]       = useState(false);
   const [styleMode, setStyleMode]     = useState(false);
+  const [photoMode, setPhotoMode]     = useState(false);
   const [openSection, setOpenSection] = useState<Section | null>(null);
   const [cvStyle, setCvStyle]         = useState<CVStyle>(DEFAULT_CV_STYLE);
+  const fileInputRef                  = useRef<HTMLInputElement>(null);
 
-  const html = buildCVHtml(cv, template, cvStyle);
+  const html = buildCVHtml(cv, template, cvStyle, photoDataUrl);
   const updateStyle = (patch: Partial<CVStyle>) => setCvStyle(prev => ({ ...prev, ...patch }));
+
+  // ─── Photo upload ─────────────────────────────────────────────────────────
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image (JPG, PNG, WEBP)');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image trop lourde (max 2 Mo)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setPhotoDataUrl(dataUrl);
+      toast.success('Photo ajoutée au CV !');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoDataUrl('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    toast.success('Photo supprimée');
+  };
 
   // ─── Aperçu dans nouvel onglet ───────────────────────────────────────────
   const handlePreview = useCallback(() => {
@@ -164,7 +195,7 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
         <Button
           variant={editMode ? 'default' : 'outline'}
           size="sm"
-          onClick={() => { setEditMode(v => !v); setStyleMode(false); }}
+          onClick={() => { setEditMode(v => !v); setStyleMode(false); setPhotoMode(false); }}
         >
           {editMode
             ? <><Check className="w-4 h-4 mr-2" />Terminer l'édition</>
@@ -172,9 +203,20 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
         </Button>
 
         <Button
+          variant={photoMode ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => { setPhotoMode(v => !v); setEditMode(false); setStyleMode(false); }}
+          className={photoMode ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+        >
+          <Camera className="w-4 h-4 mr-2" />
+          {photoMode ? 'Fermer' : 'Photo de profil'}
+          {photoDataUrl && <span className="ml-1.5 w-2 h-2 rounded-full bg-emerald-400 inline-block" />}
+        </Button>
+
+        <Button
           variant={styleMode ? 'default' : 'outline'}
           size="sm"
-          onClick={() => { setStyleMode(v => !v); setEditMode(false); }}
+          onClick={() => { setStyleMode(v => !v); setEditMode(false); setPhotoMode(false); }}
           className={styleMode ? 'bg-purple-600 hover:bg-purple-700' : ''}
         >
           <Palette className="w-4 h-4 mr-2" />
@@ -193,6 +235,79 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
         </div>
       </div>
 
+      {/* ── Panneau Photo ─────────────────────────────────────────────────── */}
+      {photoMode && (
+        <Card className="border-emerald-200 bg-emerald-50/40">
+          <CardContent className="pt-4">
+            <p className="text-xs font-bold text-emerald-700 uppercase tracking-widest mb-4">📷 Photo de profil</p>
+            <div className="flex items-start gap-6">
+              {/* Aperçu photo */}
+              <div className="shrink-0">
+                {photoDataUrl ? (
+                  <div className="relative">
+                    <img
+                      src={photoDataUrl}
+                      alt="Photo de profil"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-emerald-200 shadow-md"
+                    />
+                    <button
+                      onClick={handleRemovePhoto}
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full border-2 border-dashed border-emerald-300 bg-emerald-50 flex items-center justify-center">
+                    <Camera className="w-8 h-8 text-emerald-400" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="text-sm font-medium mb-1">Ajouter une photo (optionnel)</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    JPG, PNG ou WEBP · Max 2 Mo · Format portrait recommandé.
+                    La photo sera intégrée dans le CV selon le template choisi.
+                  </p>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-300 bg-white text-sm font-medium text-emerald-700 hover:bg-emerald-50 cursor-pointer transition-colors"
+                >
+                  <Camera className="w-4 h-4" />
+                  {photoDataUrl ? 'Changer la photo' : 'Choisir une photo'}
+                </label>
+
+                {photoDataUrl && (
+                  <button
+                    onClick={handleRemovePhoto}
+                    className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 ml-3"
+                  >
+                    <ImageOff className="w-3.5 h-3.5" /> Supprimer la photo
+                  </button>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  ℹ️ La photo est stockée localement dans votre navigateur et n'est pas envoyée à un serveur.
+                  Elle sera visible dans l'aperçu et dans l'export PDF.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Panneau de style ─────────────────────────────────────────────── */}
       {styleMode && (
         <Card className="border-purple-200 bg-purple-50/40">
@@ -204,10 +319,7 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
               </Button>
             </div>
 
-            {/* Grille des contrôles */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-
-              {/* Police */}
               <div className="sm:col-span-2 md:col-span-3">
                 <p className="text-xs text-muted-foreground mb-1 font-medium">Police d'écriture</p>
                 <select
@@ -221,121 +333,91 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
                 </select>
               </div>
 
-              {/* Taille de police */}
               <div>
                 <div className="flex justify-between mb-1">
                   <p className="text-xs text-muted-foreground font-medium">Taille de police</p>
                   <span className="text-xs font-bold text-purple-700">{cvStyle.fontSize}pt</span>
                 </div>
-                <input
-                  type="range" min={8} max={13} step={0.5}
-                  value={cvStyle.fontSize}
+                <input type="range" min={8} max={13} step={0.5} value={cvStyle.fontSize}
                   onChange={e => updateStyle({ fontSize: Number(e.target.value) })}
-                  className="w-full accent-purple-600 h-1.5"
-                />
+                  className="w-full accent-purple-600 h-1.5" />
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
                   <span>Compact</span><span>Aéré</span>
                 </div>
               </div>
 
-              {/* Interligne */}
               <div>
                 <div className="flex justify-between mb-1">
                   <p className="text-xs text-muted-foreground font-medium">Interligne</p>
                   <span className="text-xs font-bold text-purple-700">{cvStyle.lineHeight.toFixed(2)}</span>
                 </div>
-                <input
-                  type="range" min={1.2} max={2.0} step={0.05}
-                  value={cvStyle.lineHeight}
+                <input type="range" min={1.2} max={2.0} step={0.05} value={cvStyle.lineHeight}
                   onChange={e => updateStyle({ lineHeight: Number(e.target.value) })}
-                  className="w-full accent-purple-600 h-1.5"
-                />
+                  className="w-full accent-purple-600 h-1.5" />
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
                   <span>Serré</span><span>Large</span>
                 </div>
               </div>
 
-              {/* Espacement sections */}
               <div>
                 <div className="flex justify-between mb-1">
                   <p className="text-xs text-muted-foreground font-medium">Espacement sections</p>
                   <span className="text-xs font-bold text-purple-700">{cvStyle.sectionSpacing}px</span>
                 </div>
-                <input
-                  type="range" min={4} max={28} step={1}
-                  value={cvStyle.sectionSpacing}
+                <input type="range" min={4} max={28} step={1} value={cvStyle.sectionSpacing}
                   onChange={e => updateStyle({ sectionSpacing: Number(e.target.value) })}
-                  className="w-full accent-purple-600 h-1.5"
-                />
+                  className="w-full accent-purple-600 h-1.5" />
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
                   <span>Dense</span><span>Espacé</span>
                 </div>
               </div>
 
-              {/* Marges horizontales */}
               <div>
                 <div className="flex justify-between mb-1">
                   <p className="text-xs text-muted-foreground font-medium">Marges latérales</p>
                   <span className="text-xs font-bold text-purple-700">{cvStyle.marginH}px</span>
                 </div>
-                <input
-                  type="range" min={10} max={60} step={2}
-                  value={cvStyle.marginH}
+                <input type="range" min={10} max={60} step={2} value={cvStyle.marginH}
                   onChange={e => updateStyle({ marginH: Number(e.target.value) })}
-                  className="w-full accent-purple-600 h-1.5"
-                />
+                  className="w-full accent-purple-600 h-1.5" />
               </div>
 
-              {/* Marges verticales */}
               <div>
                 <div className="flex justify-between mb-1">
                   <p className="text-xs text-muted-foreground font-medium">Marges haut / bas</p>
                   <span className="text-xs font-bold text-purple-700">{cvStyle.marginV}px</span>
                 </div>
-                <input
-                  type="range" min={10} max={50} step={2}
-                  value={cvStyle.marginV}
+                <input type="range" min={10} max={50} step={2} value={cvStyle.marginV}
                   onChange={e => updateStyle({ marginV: Number(e.target.value) })}
-                  className="w-full accent-purple-600 h-1.5"
-                />
+                  className="w-full accent-purple-600 h-1.5" />
               </div>
 
-              {/* Couleur accent */}
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">Couleur d'accent</p>
                 <div className="flex gap-2 items-center">
-                  <input
-                    type="color"
-                    value={cvStyle.accentColor || '#1e293b'}
+                  <input type="color" value={cvStyle.accentColor || '#1e293b'}
                     onChange={e => updateStyle({ accentColor: e.target.value })}
-                    className="w-9 h-9 rounded-md cursor-pointer border shadow-sm"
-                  />
+                    className="w-9 h-9 rounded-md cursor-pointer border shadow-sm" />
                   <span className="text-xs text-muted-foreground font-mono">{cvStyle.accentColor || '(template)'}</span>
                 </div>
               </div>
 
-              {/* Couleur texte */}
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">Couleur du texte</p>
                 <div className="flex gap-2 items-center">
-                  <input
-                    type="color"
-                    value={cvStyle.textColor || '#1e293b'}
+                  <input type="color" value={cvStyle.textColor || '#1e293b'}
                     onChange={e => updateStyle({ textColor: e.target.value })}
-                    className="w-9 h-9 rounded-md cursor-pointer border shadow-sm"
-                  />
+                    className="w-9 h-9 rounded-md cursor-pointer border shadow-sm" />
                   <span className="text-xs text-muted-foreground font-mono">{cvStyle.textColor || '(template)'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Palettes rapides */}
             <div className="pt-3 border-t border-purple-100">
               <p className="text-xs text-muted-foreground font-medium mb-2">Palettes rapides</p>
               <div className="flex flex-wrap gap-2">
                 {PALETTES.map(p => (
-                  <button
-                    key={p.label}
+                  <button key={p.label}
                     onClick={() => updateStyle({ accentColor: p.accent })}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all hover:shadow-sm ${
                       cvStyle.accentColor === p.accent ? 'border-purple-400 bg-purple-100' : 'border-border bg-white hover:border-purple-300'
@@ -345,10 +427,8 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
                     {p.label}
                   </button>
                 ))}
-                <button
-                  onClick={() => updateStyle({ accentColor: '', textColor: '' })}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium border-dashed border-border text-muted-foreground hover:border-purple-300 transition-colors"
-                >
+                <button onClick={() => updateStyle({ accentColor: '', textColor: '' })}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium border-dashed border-border text-muted-foreground hover:border-purple-300 transition-colors">
                   <RotateCcw className="w-3 h-3" /> Couleurs par défaut
                 </button>
               </div>
@@ -363,7 +443,6 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
           <CardContent className="pt-4 space-y-3">
             <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-4">Éditeur de sections</p>
 
-            {/* Infos personnelles */}
             <EditorSection title="Informations personnelles" open={openSection === 'header'} onToggle={() => toggle('header')}>
               <div className="grid grid-cols-2 gap-3">
                 <LabeledInput label="Nom complet"     value={cv.fullName}             onChange={v => update({ fullName: v })} />
@@ -375,16 +454,11 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
               </div>
             </EditorSection>
 
-            {/* Résumé */}
             <EditorSection title="Résumé professionnel" open={openSection === 'summary'} onToggle={() => toggle('summary')}>
-              <Textarea
-                className="min-h-[100px] text-sm"
-                value={cv.professionalSummary}
-                onChange={e => update({ professionalSummary: e.target.value })}
-              />
+              <Textarea className="min-h-[100px] text-sm" value={cv.professionalSummary}
+                onChange={e => update({ professionalSummary: e.target.value })} />
             </EditorSection>
 
-            {/* Expériences */}
             <EditorSection title={`Expériences (${cv.experiences?.length || 0})`} open={openSection === 'experiences'} onToggle={() => toggle('experiences')}>
               <div className="space-y-4">
                 {cv.experiences?.map((exp, ei) => (
@@ -424,12 +498,10 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
               </div>
             </EditorSection>
 
-            {/* Compétences */}
             <EditorSection title={`Compétences (${cv.skills?.length || 0})`} open={openSection === 'skills'} onToggle={() => toggle('skills')}>
               <TagEditor tags={cv.skills || []} onChange={tags => update({ skills: tags })} placeholder="Ajouter une compétence..." />
             </EditorSection>
 
-            {/* Formation */}
             <EditorSection title={`Formation (${cv.education?.length || 0})`} open={openSection === 'education'} onToggle={() => toggle('education')}>
               <div className="space-y-3">
                 {cv.education?.map((edu, i) => (
@@ -454,7 +526,6 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
               </div>
             </EditorSection>
 
-            {/* Projets */}
             <EditorSection title={`Projets (${cv.projects?.length || 0})`} open={openSection === 'projects'} onToggle={() => toggle('projects')}>
               <div className="space-y-3">
                 {cv.projects?.map((p, i) => (
@@ -483,7 +554,6 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
               </div>
             </EditorSection>
 
-            {/* Langues */}
             <EditorSection title={`Langues (${cv.languages?.length || 0})`} open={openSection === 'languages'} onToggle={() => toggle('languages')}>
               <div className="space-y-2">
                 {cv.languages?.map((l, i) => (
@@ -504,7 +574,6 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
               </div>
             </EditorSection>
 
-            {/* Certifications */}
             <EditorSection title={`Certifications (${cv.certifications?.length || 0})`} open={openSection === 'certifications'} onToggle={() => toggle('certifications')}>
               <div className="space-y-2">
                 {cv.certifications?.map((c, i) => (
@@ -524,7 +593,6 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
               </div>
             </EditorSection>
 
-            {/* Centres d'intérêt */}
             <EditorSection title="Centres d'intérêt" open={openSection === 'interests'} onToggle={() => toggle('interests')}>
               <TagEditor tags={cv.interests || []} onChange={tags => update({ interests: tags })} placeholder="Ajouter un intérêt..." />
             </EditorSection>
@@ -535,9 +603,7 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
       {/* CV Preview */}
       <div className="rounded-xl overflow-hidden border shadow-lg bg-white">
         <div className="overflow-x-auto">
-          <div
-            style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.3%', minHeight: '600px' }}
-          >
+          <div style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.3%', minHeight: '600px' }}>
             <div dangerouslySetInnerHTML={{ __html: html }} />
           </div>
         </div>
