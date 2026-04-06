@@ -136,31 +136,27 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
   return (
     <div className="space-y-4">
 
-      {/* Template picker */}
-      <div>
-        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Choisir un template</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          {TEMPLATES.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTemplate(t.id)}
-              className={`relative rounded-lg border-2 p-3 text-left transition-all hover:shadow-md ${
-                template === t.id
-                  ? 'border-primary shadow-sm ring-2 ring-primary/20'
-                  : 'border-border hover:border-primary/40'
-              }`}
-            >
-              <div className="w-full h-1.5 rounded-full mb-2" style={{ background: t.accent }} />
-              <p className="text-xs font-semibold leading-tight">{t.label}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{t.description}</p>
-              {template === t.id && (
-                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                  <Check className="w-2.5 h-2.5 text-white" />
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
+      {/* Template picker — horizontal scrollable pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+        {TEMPLATES.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTemplate(t.id)}
+            title={t.description}
+            style={template === t.id ? { borderColor: t.accent, color: t.accent, background: `${t.accent}18` } : {}}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all whitespace-nowrap ${
+              template === t.id
+                ? 'shadow-sm'
+                : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground bg-background'
+            }`}
+          >
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ background: t.accent }}
+            />
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* Toolbar */}
