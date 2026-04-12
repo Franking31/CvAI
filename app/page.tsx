@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useCVStore } from '@/lib/store';
-import { FileText, Sparkles, Upload, User, MessageSquare, CheckCircle, Circle, ArrowRight, Zap, Target, Shield } from 'lucide-react';
+import { FileText, Sparkles, Upload, User, MessageSquare, CheckCircle, Circle, ArrowRight, Zap, Target, Shield, PenLine } from 'lucide-react';
 
 export default function HomePage() {
   const { profile, jobDescription, generatedCV } = useCVStore();
@@ -57,13 +57,6 @@ export default function HomePage() {
             Propulsé par Google Gemini — 100% gratuit
           </div>
 
-          <h1 className="text-5xl font-bold tracking-tight mb-4 leading-tight">
-            Ton CV, <span className="text-primary">adapté à chaque offre</span>
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Colle une annonce, l'IA réécrit ton CV avec les bons mots-clés ATS.
-            3 templates professionnels. Export PDF en un clic.
-          </p>
           <h1 className="text-5xl font-bold tracking-tight mb-4 leading-tight">
             Ton CV, <span className="text-primary">adapté à chaque offre</span>
           </h1>
@@ -137,27 +130,27 @@ export default function HomePage() {
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-6 mb-14">
+        <div className="grid md:grid-cols-4 gap-6 mb-14">
           {[
             {
               icon: Target,
               title: 'Optimisé ATS',
-              desc: 'Les mots-clés de loffre sont intégrés naturellement dans ton CV pour passer les filtres automatiques.',
+              desc: "Les mots-clés de l'offre sont intégrés naturellement dans ton CV pour passer les filtres automatiques.",
             },
             {
               icon: Sparkles,
               title: 'Réécriture IA',
-              desc: 'Tes expériences sont reformulées en mode "action + résultat" pour maximiser l impact.',
+              desc: "Tes expériences sont reformulées en mode \"action + résultat\" pour maximiser l'impact.",
             },
             {
               icon: Shield,
               title: '+5 Templates PDF',
               desc: 'Classique, Moderne ou Minimaliste. Choisis ton style et exporte en PDF en un clic.',
             },
-             {
-              icon: Shield,
-              title: 'Lettre de motivation PDF',
-              desc: 'Une Lettre de motivation concue pour ton poste cible et exporte en PDF en un clic.',
+            {
+              icon: PenLine,
+              title: 'Lettre de motivation',
+              desc: 'Une lettre de motivation conçue pour ton poste cible, exportable en PDF en un clic.',
             },
           ].map((f, i) => (
             <div key={i} className="flex gap-4 p-5 rounded-xl bg-white dark:bg-slate-900 border border-border">
