@@ -19,6 +19,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useState } from 'react';
 import AuthModal from '@/app/components/AuthModal';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/app/components/ThemeToggle';
 
 const links = [
   { href: '/dashboard/profile', label: 'Profil', icon: User },
@@ -69,6 +70,7 @@ export default function Navbar() {
           {/* Zone Authentification */}
           {!loading && (
             <div className="flex items-center gap-2 shrink-0">
+              <ThemeToggle />
               {user ? (
                 <>
                   {/* Indicateur Sync */}
