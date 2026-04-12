@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Save, GitBranch, Link2, Globe, ExternalLink, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import CVImport from '@/app/components/CVImport';
 
 function RequiredBadge() {
   return <span className="text-red-500 text-xs font-semibold ml-0.5">*</span>;
@@ -74,6 +75,24 @@ export default function ProfilePage() {
         <p className="text-muted-foreground mt-1">
           Les champs marqués <span className="text-red-500 font-semibold">*</span> sont obligatoires.
         </p>
+      </div>
+        <div className="space-y-2">
+    <div className="flex items-center gap-2">
+      <h2 className="text-base font-semibold">Importer un CV existant</h2>
+      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">IA</span>
+    </div>
+    <p className="text-sm text-muted-foreground">
+      Importez votre CV au format PDF, DOCX ou TXT — l'IA remplit automatiquement le formulaire ci-dessous.
+    </p>
+     <CVImport onImported={(importedProfile) => {
+        form.reset(importedProfile);
+      }} />
+      </div>
+
+      <div className="relative flex items-center gap-4">
+        <div className="flex-1 border-t" />
+        <span className="text-xs text-muted-foreground bg-background px-2">ou remplissez manuellement</span>
+        <div className="flex-1 border-t" />
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -423,36 +442,53 @@ export default function ProfilePage() {
             <CardDescription>Techniques et soft skills — au moins une requise</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {form.watch('skills').map((_, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <Input
-                    {...form.register(`skills.${i}`)}
-                    placeholder="React, Python..."
-                    className="w-44 h-9 text-sm"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 text-red-400 shrink-0"
-                    onClick={() => form.setValue('skills', form.getValues('skills').filter((_, idx) => idx !== i))}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+            <div className="space-y-4">
+              {/* Affichage en grille pour meilleure lisibilité */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {(form.watch('skills') || []).map((skill, i) => (
+                  skill && skill.trim() ? (
+                    <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                      <Input
+                        {...form.register(`skills.${i}`)}
+                        placeholder="Ex: React"
+                        className="h-8 text-sm border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-red-500 shrink-0"
+                        onClick={() => {
+                          const currentSkills = form.getValues('skills') || [];
+                          form.setValue('skills', currentSkills.filter((_, idx) => idx !== i));
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : null
+                ))}
+              </div>
+              
+              {/* Bouton Ajouter */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  const currentSkills = form.getValues('skills') || [];
+                  // Filtrer les compétences vides avant d'ajouter
+                  const filteredSkills = currentSkills.filter(s => s && s.trim());
+                  form.setValue('skills', [...filteredSkills, '']);
+                }}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Ajouter une compétence
+              </Button>
+              
+              <FieldError message={(errors.skills as any)?.message} />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              onClick={() => form.setValue('skills', [...form.getValues('skills'), ''])}
-            >
-              <Plus className="mr-1 h-4 w-4" />Ajouter
-            </Button>
-            <FieldError message={(errors.skills as any)?.message} />
           </CardContent>
         </Card>
 
@@ -612,50 +648,59 @@ export default function ProfilePage() {
         </Card>
 
         {/* ── Centres d'intérêt ── */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{"Centres d'intérêt"}</CardTitle>
-            <CardDescription>Loisirs, passions, activités</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {(form.watch('interests') ?? []).map((_, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <Input
-                    {...form.register(`interests.${i}`)}
-                    placeholder="Programmation, Gaming..."
-                    className="w-44 h-9 text-sm"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 text-red-400 shrink-0"
-                    onClick={() =>
-                      form.setValue(
-                        'interests',
-                        (form.getValues('interests') ?? []).filter((_, idx) => idx !== i)
-                      )
-                    }
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+        {/* ── Centres d'intérêt ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Centres d'intérêt</CardTitle>
+          <CardDescription>Loisirs, passions, activités</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Affichage en grille */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {(form.watch('interests') || []).map((interest, i) => (
+                interest && interest.trim() ? (
+                  <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                    <Input
+                      {...form.register(`interests.${i}`)}
+                      placeholder="Ex: Football"
+                      className="h-8 text-sm border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-red-500 shrink-0"
+                      onClick={() => {
+                        const currentInterests = form.getValues('interests') || [];
+                        form.setValue('interests', currentInterests.filter((_, idx) => idx !== i));
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : null
               ))}
             </div>
+            
+            {/* Bouton Ajouter */}
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="mt-3"
-              onClick={() =>
-                form.setValue('interests', [...(form.getValues('interests') ?? []), ''])
-              }
+              className="mt-2"
+              onClick={() => {
+                const currentInterests = form.getValues('interests') || [];
+                const filteredInterests = currentInterests.filter(i => i && i.trim());
+                form.setValue('interests', [...filteredInterests, '']);
+              }}
             >
-              <Plus className="mr-1 h-4 w-4" />Ajouter un loisir
+              <Plus className="mr-1 h-4 w-4" />
+              Ajouter un loisir
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
         <Button type="submit" size="lg" className="w-full">
           <Save className="mr-2 h-5 w-5" />Sauvegarder mon profil

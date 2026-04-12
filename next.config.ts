@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: process.env.NODE_ENV === 'production',
   },
+  experimental: {
+    serverComponentsExternalPackages: ['pdfjs-dist']
+  },
 };
 
 export default nextConfig;
