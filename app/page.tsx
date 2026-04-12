@@ -64,6 +64,13 @@ export default function HomePage() {
             Colle une annonce, l'IA réécrit ton CV avec les bons mots-clés ATS.
             3 templates professionnels. Export PDF en un clic.
           </p>
+          <h1 className="text-5xl font-bold tracking-tight mb-4 leading-tight">
+            Ton CV, <span className="text-primary">adapté à chaque offre</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            Colle une annonce, l'IA réécrit ton CV avec les bons mots-clés ATS.
+            3 templates professionnels. Export PDF en un clic.
+          </p>
 
           {/* Progress bar si l'utilisateur a déjà commencé */}
           {completedSteps > 0 && (
@@ -144,8 +151,13 @@ export default function HomePage() {
             },
             {
               icon: Shield,
-              title: '3 Templates PDF',
+              title: '+5 Templates PDF',
               desc: 'Classique, Moderne ou Minimaliste. Choisis ton style et exporte en PDF en un clic.',
+            },
+             {
+              icon: Shield,
+              title: 'Lettre de motivation PDF',
+              desc: 'Une Lettre de motivation concue pour ton poste cible et exporte en PDF en un clic.',
             },
           ].map((f, i) => (
             <div key={i} className="flex gap-4 p-5 rounded-xl bg-white dark:bg-slate-900 border border-border">
