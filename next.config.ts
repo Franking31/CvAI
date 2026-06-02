@@ -8,7 +8,10 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: process.env.NODE_ENV === 'production',
   },
   experimental: {
-    serverComponentsExternalPackages: ['pdfjs-dist']
+    serverComponentsExternalPackages: ['pdfjs-dist'],
+     serverActions: {
+      bodySizeLimit: '10mb',
+    },
   },
 };
 

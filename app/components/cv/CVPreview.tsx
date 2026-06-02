@@ -70,8 +70,20 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string;
-      setPhotoDataUrl(dataUrl);
-      toast.success('Photo ajoutée au CV !');
+      // Redimensionner à max 220px pour ne pas alourdir le payload PDF
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 220;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.85);
+        setPhotoDataUrl(compressed);
+        toast.success('Photo ajoutée au CV !');
+      };
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   };

@@ -1,11 +1,14 @@
 // app/api/export-pdf/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
+// ── Augmente la limite body pour cette route (App Router) ──────────────────
+// Nécessaire quand le HTML contient une photo base64
+export const maxDuration = 30; // secondes (pour Vercel)
+
 async function getBrowser() {
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (isProduction) {
-    // En production (Vercel, AWS...) : puppeteer-core + chromium serverless
     const puppeteer = await import('puppeteer-core');
     const chromium  = await import('@sparticuz/chromium');
     return puppeteer.default.launch({
@@ -14,7 +17,6 @@ async function getBrowser() {
       headless: true,
     });
   } else {
-    // En local : puppeteer standard (embarque son propre Chromium)
     const puppeteer = await import('puppeteer');
     return puppeteer.default.launch({
       headless: true,
@@ -25,7 +27,27 @@ async function getBrowser() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { html, fileName } = await req.json();
+    // Lire le body manuellement pour contourner la limite JSON par défaut
+    const text = await req.text();
+
+    // Vérifier la taille (refus au-delà de 15 Mo)
+    if (text.length > 15 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'Payload trop lourd (>15 Mo). Réduisez la taille de la photo.' },
+        { status: 413 }
+      );
+    }
+
+    let html: string;
+    let fileName: string;
+
+    try {
+      const body = JSON.parse(text);
+      html = body.html;
+      fileName = body.fileName ?? 'cv';
+    } catch {
+      return NextResponse.json({ error: 'JSON invalide' }, { status: 400 });
+    }
 
     if (!html) {
       return NextResponse.json({ error: 'HTML manquant' }, { status: 400 });

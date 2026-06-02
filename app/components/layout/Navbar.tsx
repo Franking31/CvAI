@@ -27,6 +27,7 @@ const links = [
   { href: '/dashboard/generate', label: 'CV', icon: Sparkles },
   { href: '/dashboard/cover-letter', label: 'Lettre', icon: PenLine },
   { href: '/dashboard/chat', label: 'Assistant', icon: MessageSquare },
+  { href: '/dashboard/test', label: 'Test', icon: FileText },
 ];
 
 export default function Navbar() {
