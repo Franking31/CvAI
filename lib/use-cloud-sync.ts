@@ -7,23 +7,40 @@ import { useAuth } from './auth-context';
 import { useCVStore } from './store';
 
 /**
- * Ce hook observe le store Zustand et synchronise automatiquement
- * les données vers Supabase dès que l'utilisateur est connecté.
- * Debounce de 1.5s pour ne pas spammer l'API à chaque frappe.
+ * Synchronise le store Zustand → Supabase avec debounce 2s.
+ * 
+ * IMPORTANT : on ignore les premiers changements dus au chargement
+ * initial (loadUserData dans auth-context), pour ne pas déclencher
+ * un upsert inutile ou écraser des données cloud avec des données locales.
  */
 export function useCloudSync() {
-  const { user } = useAuth();
+  const { user, dataReady } = useAuth();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ✅ Fix: mémoïser le client Supabase pour éviter de le recréer à chaque render
-  // (sinon la dépendance [user, supabase] change en boucle et détruit/recrée
-  //  l'abonnement en permanence sans jamais déclencher le vrai upsert)
+  // Compteur pour ignorer les N premiers changements (chargement initial)
+  const skipCountRef = useRef(0);
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    if (!user) return;
+    // Réinitialiser le skip counter quand user change
+    skipCountRef.current = 0;
+  }, [user?.id]);
+
+  useEffect(() => {
+    // N'activer la sync que quand les données cloud sont prêtes
+    if (!user || !dataReady) return;
+
+    // Après le chargement initial, les premières mises à jour du store
+    // viennent de loadUserData elle-même → on les ignore pour éviter
+    // de réécrire immédiatement ce qu'on vient de lire
+    const SKIP_INITIAL = 3;
 
     const unsub = useCVStore.subscribe((state) => {
+      // Ignorer les premiers changements (chargement initial)
+      if (skipCountRef.current < SKIP_INITIAL) {
+        skipCountRef.current++;
+        return;
+      }
+
       if (timerRef.current) clearTimeout(timerRef.current);
 
       timerRef.current = setTimeout(async () => {
@@ -48,12 +65,12 @@ export function useCloudSync() {
         } else {
           console.log('[cloud-sync] Données synchronisées pour', user.email);
         }
-      }, 1500);
+      }, 2000);
     });
 
     return () => {
       unsub();
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [user, supabase]);
+  }, [user, dataReady, supabase]);
 }

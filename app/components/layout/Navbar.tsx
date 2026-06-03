@@ -22,12 +22,12 @@ import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/app/components/ThemeToggle';
 
 const links = [
-  { href: '/dashboard/profile', label: 'Profil', icon: User },
-  { href: '/dashboard/job', label: 'Offre', icon: Briefcase },
-  { href: '/dashboard/generate', label: 'CV', icon: Sparkles },
-  { href: '/dashboard/cover-letter', label: 'Lettre', icon: PenLine },
-  { href: '/dashboard/chat', label: 'Assistant', icon: MessageSquare },
-  { href: '/dashboard/test', label: 'Test', icon: FileText },
+  { href: '/dashboard/profile',      label: 'Profil',    icon: User },
+  { href: '/dashboard/job',          label: 'Offre',     icon: Briefcase },
+  { href: '/dashboard/generate',     label: 'CV',        icon: Sparkles },
+  { href: '/dashboard/cover-letter', label: 'Lettre',    icon: PenLine },
+  { href: '/dashboard/chat',         label: 'Assistant', icon: MessageSquare },
+  { href: '/dashboard/test',         label: 'Test QCM',  icon: FileText },
 ];
 
 export default function Navbar() {
