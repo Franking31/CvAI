@@ -8,13 +8,13 @@ export type AIProvider = 'gemini' | 'groq';
 export const AI_PROVIDERS: Record<AIProvider, { label: string; models: string[]; defaultModel: string }> = {
   gemini: {
     label: 'Google Gemini',
-    models: ['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-pro'],
-    defaultModel: 'gemini-2.0-flash',
+    models: ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-flash-latest', 'gemini-3.8-flash'],
+    defaultModel: 'gemini-flash-lite-latest',
   },
   groq: {
     label: 'Groq',
-    models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
-    defaultModel: 'llama-3.3-70b-versatile',
+    models: ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'],
+    defaultModel: 'openai/gpt-oss-120b',
   },
 };
 

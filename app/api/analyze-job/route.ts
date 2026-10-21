@@ -96,9 +96,9 @@ export async function POST(req: NextRequest) {
 
     let analysis: any;
     if (provider === 'groq') {
-      analysis = await analyzeWithGroq(jobDescription, model || 'llama-3.3-70b-versatile');
+      analysis = await analyzeWithGroq(jobDescription, model || 'openai/gpt-oss-120b');
     } else {
-      analysis = await analyzeWithGemini(jobDescription, model || 'gemini-2.0-flash');
+      analysis = await analyzeWithGemini(jobDescription, model || 'gemini-flash-lite-latest');
     }
 
     return NextResponse.json({ analysis });

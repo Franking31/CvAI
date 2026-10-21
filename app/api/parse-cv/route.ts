@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file     = formData.get('file') as File | null;
     provider       = (formData.get('provider') as string) || 'gemini';
-    const model    = (formData.get('model') as string)    || 'gemini-2.0-flash';
+    const model    = (formData.get('model') as string)    || 'gemini-flash-lite-latest';
 
     if (!file) return NextResponse.json({ error: 'Aucun fichier reçu' }, { status: 400 });
     if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: 'Fichier trop lourd (max 5 Mo)' }, { status: 400 });
@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
         if (isRecoverable && process.env.GEMINI_API_KEY) {
           const reason = groqErr.message?.includes('GROQ_QUOTA') ? 'quota dépassé' : 'réponse invalide';
           console.warn(`[parse-cv] Groq a échoué (${reason}), fallback Gemini automatique...`);
-          profile = await parseWithGemini(cvText, 'gemini-2.0-flash');
+          profile = await parseWithGemini(cvText, 'gemini-flash-lite-latest');
         } else {
           throw groqErr;
         }
