@@ -174,33 +174,33 @@ export default function CVImport({ onImported }: Props) {
     
     // Normalisation...
     // Normalisation pour correspondre au schéma du formulaire
+const arr = (v: any) => (Array.isArray(v) ? v : []);
 const profile = {
-  fullName:       parsedProfile.fullName       || 'Test User', // Valeur par défaut pour test
-  title:          parsedProfile.title          || 'Developer',
-  email:          parsedProfile.email          || 'test@example.com',
-  phone:          parsedProfile.phone          || '0600000000',
-  location:       parsedProfile.location       || 'Paris',
-  summary:        parsedProfile.summary        || 'Test summary',
-  github:         parsedProfile.github         || '',
-  linkedin:       parsedProfile.linkedin       || '',
-  portfolio:      parsedProfile.portfolio      || '',
-  socialLinks:    Array.isArray(parsedProfile.socialLinks)    ? parsedProfile.socialLinks    : [],
-  experiences:    Array.isArray(parsedProfile.experiences) && parsedProfile.experiences.length > 0 
-    ? parsedProfile.experiences 
-    : [{ company: 'Test Company', position: 'Developer', dates: '2024', description: 'Test description' }],
-  skills:         Array.isArray(parsedProfile.skills) && parsedProfile.skills.length > 0
-    ? parsedProfile.skills.filter(Boolean) 
-    : ['JavaScript', 'React'],
-  education:      Array.isArray(parsedProfile.education) && parsedProfile.education.length > 0
-    ? parsedProfile.education 
-    : [{ school: 'Test School', degree: 'Master', dates: '2023' }],
-  projects:       Array.isArray(parsedProfile.projects)       ? parsedProfile.projects       : [],
-  languages:      Array.isArray(parsedProfile.languages)      ? parsedProfile.languages      : [{ language: 'Français', level: 'Natif' }],
-  certifications: Array.isArray(parsedProfile.certifications) ? parsedProfile.certifications : [],
-  interests:      Array.isArray(parsedProfile.interests) && parsedProfile.interests.length > 0
-    ? parsedProfile.interests.filter(Boolean) 
-    : ['Coding'],
+  fullName: parsedProfile.fullName || '',
+  title: parsedProfile.title || '',
+  email: parsedProfile.email || '',
+  phone: parsedProfile.phone || '',
+  location: parsedProfile.location || '',
+  summary: parsedProfile.summary || '',
+  github: parsedProfile.github || '',
+  linkedin: parsedProfile.linkedin || '',
+  portfolio: parsedProfile.portfolio || '',
+  socialLinks: arr(parsedProfile.socialLinks),
+  experiences: arr(parsedProfile.experiences).length
+    ? parsedProfile.experiences
+    : [{ company: '', position: '', dates: '', description: '' }],
+  skills: arr(parsedProfile.skills).filter(Boolean).length
+    ? parsedProfile.skills.filter(Boolean)
+    : [''],
+  education: arr(parsedProfile.education).length
+    ? parsedProfile.education
+    : [{ school: '', degree: '', dates: '' }],
+  projects: arr(parsedProfile.projects),
+  languages: arr(parsedProfile.languages),
+  certifications: arr(parsedProfile.certifications),
+  interests: arr(parsedProfile.interests).filter(Boolean),
 };
+setProfile(profile as any);
 
 console.log('📤 Profil envoyé au formulaire:', profile);
 setProfile(profile as any);

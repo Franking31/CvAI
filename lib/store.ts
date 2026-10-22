@@ -47,6 +47,7 @@ type CVStore = {
   aiProvider: AIProvider;
   aiModel: string;
   jobUrl: string;
+  ownerId: string | null;                       // propriétaire des données locales
 
   setProfile: (profile: UserProfileForm) => void;
   setJobDescription: (desc: string) => void;
@@ -61,6 +62,7 @@ type CVStore = {
   setAIProvider: (provider: AIProvider) => void;
   setAIModel: (model: string) => void;
   setJobUrl: (url: string) => void;
+  setOwnerId: (id: string | null) => void;
 };
 
 export const useCVStore = create<CVStore>()(
@@ -76,6 +78,7 @@ export const useCVStore = create<CVStore>()(
       aiProvider: 'gemini',
       aiModel: AI_PROVIDERS.gemini.defaultModel,
       jobUrl: '',
+      ownerId: null, 
 
       setProfile: (profile) => set({ profile }),
       setJobDescription: (desc) => set({ jobDescription: desc }),
@@ -84,6 +87,7 @@ export const useCVStore = create<CVStore>()(
       setPhotoDataUrl: (url) => set({ photoDataUrl: url }),
       setKeywordAnalysis: (analysis) => set({ keywordAnalysis: analysis }),
       setJobUrl: (url) => set({ jobUrl: url }),
+      setOwnerId: (id) => set({ ownerId: id }),
 
       addMessage: (message) =>
         set((state) => ({
@@ -111,6 +115,7 @@ export const useCVStore = create<CVStore>()(
           conversationHistory: [],
           coverLetter: '',
           photoDataUrl: '',
+          ownerId : null, 
         }),
     }),
     {
@@ -126,6 +131,7 @@ export const useCVStore = create<CVStore>()(
         aiProvider: state.aiProvider,
         aiModel: state.aiModel,
         jobUrl: state.jobUrl,
+        ownerId: state.ownerId, 
       }),
     }
   )

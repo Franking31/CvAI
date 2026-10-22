@@ -1,7 +1,7 @@
 // app/dashboard/profile/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCVStore } from '@/lib/store';
@@ -20,6 +20,23 @@ import { toast } from 'sonner';
 import CVImport from '@/app/components/CVImport';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const EMPTY_PROFILE: UserProfileInput = {
+  fullName: '', title: '', email: '', phone: '', location: '', summary: '',
+  github: '', linkedin: '', portfolio: '', socialLinks: [],
+  experiences: [{ company: '', position: '', dates: '', description: '' }],
+  skills: [''],
+  education: [{ school: '', degree: '', dates: '' }],
+  projects: [], languages: [], certifications: [], interests: [],
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  fullName: 'Nom complet', title: 'Titre', email: 'Email', phone: 'Téléphone',
+  location: 'Localisation', summary: 'Résumé', github: 'GitHub', linkedin: 'LinkedIn',
+  portfolio: 'Portfolio', socialLinks: 'Liens', experiences: 'Expériences',
+  skills: 'Compétences', education: 'Formation', projects: 'Projets',
+  languages: 'Langues', certifications: 'Certifications', interests: "Centres d'intérêt",
+};
 
 function RequiredBadge() {
   return <span className="text-rose-400 text-xs font-bold ml-0.5">*</span>;
@@ -46,6 +63,7 @@ function SectionCard({
   collapsible = false,
   defaultOpen = true,
   headerAction,
+  forceOpen, 
 }: {
   icon: any;
   title: string;
@@ -56,8 +74,12 @@ function SectionCard({
   collapsible?: boolean;
   defaultOpen?: boolean;
   headerAction?: React.ReactNode;
+  forceOpen? : boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  // props: ajoute  forceOpen?: boolean
+const [open, setOpen] = useState(defaultOpen);
+useEffect(() => { if (forceOpen) setOpen(true); }, [forceOpen]);
+  
 
   const colors = {
     blue:    { icon: 'bg-blue-500/10 text-blue-500',     border: 'border-blue-500/20',    dot: 'bg-blue-500'    },
@@ -69,6 +91,7 @@ function SectionCard({
     orange:  { icon: 'bg-orange-500/10 text-orange-500', border: 'border-orange-500/20',  dot: 'bg-orange-500'  },
   };
   const c = colors[accentColor];
+  
 
   return (
     <div className={`rounded-2xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${c.border}`}>
@@ -163,16 +186,12 @@ export default function ProfilePage() {
 
   const form = useForm<UserProfileInput, any, UserProfileForm>({
     resolver: zodResolver(userProfileSchema),
-    defaultValues: profile ?? {
-      fullName: '', title: '', email: '', phone: '', location: '', summary: '',
-      github: '', linkedin: '', portfolio: '',
-      socialLinks: [],
-      experiences: [{ company: '', position: '', dates: '', description: '' }],
-      skills: [''],
-      education: [{ school: '', degree: '', dates: '' }],
-      projects: [], languages: [], certifications: [], interests: [],
-    },
+    defaultValues: (profile as UserProfileInput | null) ?? EMPTY_PROFILE, 
   });
+
+  useEffect(() => {
+    form.reset((profile as UserProfileInput | null) ?? EMPTY_PROFILE);
+  }, [profile, form]);
 
   const { fields: expFields,    append: appendExp,    remove: removeExp    } = useFieldArray({ control: form.control, name: 'experiences' });
   const { fields: eduFields,    append: appendEdu,    remove: removeEdu    } = useFieldArray({ control: form.control, name: 'education' });
@@ -187,19 +206,30 @@ export default function ProfilePage() {
     toast.success('Profil sauvegardé !');
     setTimeout(() => setSaved(false), 3000);
   };
+  const onInvalid = (errs: Record<string, unknown>) => {
+    console.log('Erreurs formulaire :', errs);
+    toast.error('Profil non sauvegardé', {
+      description: 'À corriger : ' + Object.keys(errs).map((k) => FIELD_LABELS[k] ?? k).join(', '),
+    });
+  };
 
   const errors = form.formState.errors;
 
   // Progression
   const watched = form.watch();
-  const progressItems = [
-    !!watched.fullName, !!watched.title, !!watched.email, !!watched.phone,
-    !!watched.location, !!watched.summary,
-    (watched.experiences?.length ?? 0) > 0 && !!watched.experiences?.[0]?.company,
-    (watched.skills?.filter(Boolean).length ?? 0) >= 3,
-    (watched.education?.length ?? 0) > 0 && !!watched.education?.[0]?.school,
+  const checks = [
+    { label: 'Nom', ok: !!watched.fullName },
+    { label: 'Titre', ok: !!watched.title },
+    { label: 'Email', ok: !!watched.email },
+    { label: 'Téléphone', ok: !!watched.phone },
+    { label: 'Localisation', ok: !!watched.location },
+    { label: 'Résumé', ok: !!watched.summary },
+    { label: '1re expérience', ok: !!watched.experiences?.[0]?.company },
+    { label: '3 compétences', ok: (watched.skills?.filter((s) => s?.trim()).length ?? 0) >= 3 },
+    { label: '1re formation', ok: !!watched.education?.[0]?.school },
   ];
-  const progressPct = Math.round((progressItems.filter(Boolean).length / progressItems.length) * 100);
+  const missing = checks.filter((c) => !c.ok).map((c) => c.label);
+  const progressPct = Math.round(((checks.length - missing.length) / checks.length) * 100);
 
   return (
     <>
@@ -248,11 +278,14 @@ export default function ProfilePage() {
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
+               {missing.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">Il manque : {missing.join(', ')}</p>
+              )}
             </div>
           </div>
 
           {/* ── Formulaire ── */}
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-4">
 
             {/* Infos personnelles */}
             <SectionCard icon={User} title="Informations personnelles" description="Vos coordonnées apparaîtront en tête de CV" accentColor="blue">
@@ -295,6 +328,7 @@ export default function ProfilePage() {
                   <Plus className="w-3 h-3" /> Lien
                 </button>
               }
+              forceOpen={!!(errors.github || errors.linkedin || errors.portfolio || errors.socialLinks)}
             >
               <div className="space-y-3 mt-4">
                 {[
@@ -419,6 +453,7 @@ export default function ProfilePage() {
                   <Plus className="w-3 h-3" /> Ajouter
                 </button>
               }
+              forceOpen={!!errors.projects}
             >
               <div className="mt-4 space-y-4">
                 {projFields.map((field, i) => {
@@ -522,6 +557,7 @@ export default function ProfilePage() {
                     <Plus className="w-3 h-3" />
                   </button>
                 }
+                forceOpen={!!errors.languages}
               >
                 <div className="mt-3 space-y-2">
                   {langFields.map((field, i) => (
@@ -546,6 +582,7 @@ export default function ProfilePage() {
                     <Plus className="w-3 h-3" />
                   </button>
                 }
+                forceOpen={!!errors.certifications}
               >
                 <div className="mt-3 space-y-2">
                   {certFields.map((field, i) => (
@@ -564,23 +601,24 @@ export default function ProfilePage() {
             </div>
 
             {/* Centres d'intérêt */}
-            <SectionCard icon={Heart} title="Centres d'intérêt" description="Loisirs, passions, activités" accentColor="rose" collapsible defaultOpen={false}>
+            <SectionCard icon={Heart} title="Centres d'intérêt" description="Loisirs, passions, activités" accentColor="rose" collapsible defaultOpen={false}
+              forceOpen={!!errors.interests}
+            >
               <div className="mt-4">
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {(form.watch('interests') || []).map((interest, i) =>
-                    interest?.trim() ? (
-                      <div key={i} className="flex items-center gap-1 bg-rose-500/10 border border-rose-500/20 rounded-lg overflow-hidden hover:border-rose-500/40 transition-colors">
-                        <Input {...form.register(`interests.${i}`)} placeholder="Football..." className="w-28 h-7 text-xs border-0 bg-transparent focus-visible:ring-0 px-2.5" />
-                        <button type="button" onClick={() => form.setValue('interests', (form.getValues('interests') || []).filter((_, idx) => idx !== i))}
-                          className="w-6 h-7 flex items-center justify-center text-muted-foreground hover:text-rose-400 transition-colors border-l border-rose-500/20">
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    ) : null
-                  )}
+                  {(form.watch('interests') || []).map((_, i) => (
+                    <div key={i} className="flex items-center gap-1 bg-rose-500/10 border border-rose-500/20 rounded-lg overflow-hidden hover:border-rose-500/40 transition-colors">
+                      <Input {...form.register(`interests.${i}`)} placeholder="Football..." className="w-28 h-7 text-xs border-0 bg-transparent focus-visible:ring-0 px-2.5" />
+                      <button type="button"
+                        onClick={() => form.setValue('interests', (form.getValues('interests') || []).filter((_, idx) => idx !== i))}
+                        className="w-6 h-7 flex items-center justify-center text-muted-foreground hover:text-rose-400 transition-colors border-l border-rose-500/20">
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
                 <button type="button"
-                  onClick={() => { const c = (form.getValues('interests') || []).filter(i => i?.trim()); form.setValue('interests', [...c, '']); }}
+                  onClick={() => form.setValue('interests', [...(form.getValues('interests') || []), ''])}
                   className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg px-3 py-2 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all">
                   <Plus className="w-3 h-3" /> Ajouter un loisir
                 </button>

@@ -1,8 +1,8 @@
 'use client';
 // lib/auth-context.tsx
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { User, Session } from '@supabase/supabase-js';
 import { createClient } from './supabase';
 import { useCVStore } from './store';
 
@@ -10,106 +10,80 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  dataReady: boolean; // ← nouveau : true quand les données cloud sont chargées
+  dataReady: boolean;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  loading: true,
-  dataReady: false,
-  signOut: async () => {},
+  user: null, session: null, loading: true, dataReady: false, signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dataReady, setDataReady] = useState(false);
+  // id pour lequel les données cloud sont chargées (null = anonyme, undefined = pas encore)
+  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(undefined);
 
   const supabase = useMemo(() => createClient(), []);
+  const user = session?.user ?? null;
+  const userId = user?.id ?? null;
+  const dataReady = !loading && loadedFor === userId;
 
-  const loadUserData = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_data')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        // PGRST116 = aucune ligne trouvée (nouveau user) — pas une vraie erreur
-        if (error.code !== 'PGRST116') {
-          console.error('[auth] Erreur chargement user_data:', error.message);
-        }
-        return;
-      }
-
-      if (!data) return;
-
-      // On récupère l'état LOCAL actuel pour ne pas écraser
-      // des données saisies localement si Supabase est plus ancien
-      const store = useCVStore.getState();
-
-      // Stratégie : Supabase gagne sauf si la valeur locale est plus récente
-      // Pour simplifier : Supabase gagne toujours (source de vérité cloud)
-      // mais on ne touche pas aux champs null/undefined/vides
-      if (data.profile)              store.setProfile(data.profile);
-      if (data.job_description)      store.setJobDescription(data.job_description);
-      if (data.generated_cv)         store.setGeneratedCV(data.generated_cv);
-      if (data.keyword_analysis)     store.setKeywordAnalysis(data.keyword_analysis);
-      if (data.conversation_history?.length) store.setConversationHistory(data.conversation_history);
-      if (data.job_url)              store.setJobUrl(data.job_url);
-      if (data.ai_provider)          store.setAIProvider(data.ai_provider);
-      if (data.ai_model)             store.setAIModel(data.ai_model);
-    } catch (e) {
-      console.error('[auth] Exception loadUserData:', e);
-    }
+  // 1) Suivi de la session : AUCUN appel Supabase dans ce callback
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setLoading(false);
+    });
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
+  // 2) Chargement des données quand le compte change (login, logout, switch)
   useEffect(() => {
-    let initialized = false;
+    if (loading) return;
+    let cancelled = false;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    (async () => {
+      const store = useCVStore.getState();
 
-      if (session?.user) {
-        await loadUserData(session.user.id);
+      // Données locales d'un AUTRE compte (ou après déconnexion) → on efface
+      if (store.ownerId && store.ownerId !== userId) {
+        store.resetAll();
       }
 
-      setLoading(false);
-      setDataReady(true);
-      initialized = true;
-    });
+      if (userId) {
+        const { data, error } = await supabase
+          .from('user_data')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (cancelled) return;
 
-        if (session?.user) {
-          // Ne recharger depuis Supabase que si c'est un vrai changement d'auth
-          // (nouveau login), pas juste un refresh de token
-          if (!initialized || _event === 'SIGNED_IN') {
-            await loadUserData(session.user.id);
-          }
+        if (error) {
+          console.error('[auth] Erreur chargement user_data:', error.message);
+        } else {
+          const s = useCVStore.getState();
+          if (data?.profile)          s.setProfile(data.profile);
+          if (data?.job_description)  s.setJobDescription(data.job_description);
+          if (data?.generated_cv)     s.setGeneratedCV(data.generated_cv);
+          if (data?.keyword_analysis) s.setKeywordAnalysis(data.keyword_analysis);
+          if (data?.conversation_history?.length) s.setConversationHistory(data.conversation_history);
+          if (data?.job_url)          s.setJobUrl(data.job_url);
+          if (data?.ai_provider)      s.setAIProvider(data.ai_provider);
+          if (data?.ai_model)         s.setAIModel(data.ai_model);
+          s.setOwnerId(userId);       // à partir de là, les données locales sont à ce compte
         }
-
-        setLoading(false);
-        setDataReady(true);
-        initialized = true;
       }
-    );
 
-    return () => subscription.unsubscribe();
-  }, [loadUserData, supabase]);
+      if (!cancelled) setLoadedFor(userId);
+    })();
+
+    return () => { cancelled = true; };
+  }, [userId, loading, supabase]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    useCVStore.getState().resetAll();
-    setDataReady(false);
+    await supabase.auth.signOut(); // l'effet 2 vide le store quand userId passe à null
   };
 
   return (

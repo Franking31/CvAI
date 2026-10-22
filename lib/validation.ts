@@ -62,8 +62,9 @@ export const userProfileSchema = z.object({
   ).min(1, "Vous devez ajouter au moins une expérience professionnelle"),
 
   // Compétences
-  skills: z.array(z.string().min(1, "Compétence vide"))
-    .min(3, "Ajoutez au moins 3 compétences"),
+  skills: z.array(z.string())
+    .transform((a) => a.map((s) => s.trim()).filter(Boolean))
+    .pipe(z.array(z.string()).min(3, "Ajoutez au moins 3 compétences")),
 
   // Formation
   education: z.array(
@@ -80,7 +81,7 @@ export const userProfileSchema = z.object({
       name: z.string().min(2, "Le nom du projet est requis"),
       description: z.string().min(15, "Décrivez le projet"),
       technologies: z.string().optional(),
-      dates: dateSchema.optional(),
+      dates: dateSchema.optional().or(z.literal('')),
       url: z.string().url("URL invalide").optional().or(z.literal("")),
     })
   ).default([]),
@@ -103,7 +104,8 @@ export const userProfileSchema = z.object({
   ).default([]),
 
   // Centres d'intérêt
-  interests: z.array(z.string().min(2)).default([]),
+  interests: z.array(z.string()).default([])
+  .transform((a) => a.map((s) => s.trim()).filter(Boolean)),
 });
 
 export type UserProfileInput = z.input<typeof userProfileSchema>;
