@@ -1,7 +1,7 @@
 // app/dashboard/cover-letter/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useCVStore } from '@/lib/store';
 import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Loader2, FileText, Copy, Download, PenLine, User, Briefcase, CheckCircle2 } from 'lucide-react';
@@ -48,6 +48,21 @@ function buildLetterHtml(letter: string, profile: any): string {
 export default function CoverLetterPage() {
   const { profile, jobDescription, coverLetter, setCoverLetter, aiProvider, aiModel } = useCVStore();
   const [loading, setLoading] = useState(false);
+
+  const wrapRef  = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale]   = useState(0.75);
+  const [innerH, setInnerH] = useState(1123);
+
+useEffect(() => {
+  const update = () => {
+    if (wrapRef.current)  setScale(Math.min(1, wrapRef.current.clientWidth / 794));
+    if (innerRef.current) setInnerH(innerRef.current.scrollHeight);
+  };
+  update();
+  window.addEventListener('resize', update);
+  return () => window.removeEventListener('resize', update);
+}, [coverLetter, profile]);
 
   const hasProfile = !!profile?.fullName;
   const hasJob = !!jobDescription?.trim();
@@ -191,15 +206,15 @@ export default function CoverLetterPage() {
               </div>
             </div>
             <div className="p-6">
-              <div className="rounded-xl overflow-hidden border shadow-lg bg-white">
-                <div className="overflow-x-auto">
-                  <div style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.3%', minHeight: '600px' }}>
-                    <div dangerouslySetInnerHTML={{ __html: buildLetterHtml(coverLetter, profile) }} />
+             <div ref={wrapRef} className="rounded-xl overflow-hidden border shadow-lg bg-white">
+                  <div style={{ height: innerH * scale }}>
+                    <div ref={innerRef} style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 794 }}>
+                      <div dangerouslySetInnerHTML={{ __html: buildLetterHtml(coverLetter, profile) }} />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
         )}
       </div>
     </div>

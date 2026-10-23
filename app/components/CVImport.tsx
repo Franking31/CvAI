@@ -139,6 +139,10 @@ export default function CVImport({ onImported }: Props) {
   const [fileName, setFileName] = useState('');
   const [error,    setError]    = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const wrapRef  = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale]       = useState(0.75);
+  const [innerH, setInnerH]     = useState(1123);
 
   const currentProv = AI_PROVIDERS[provider];
 

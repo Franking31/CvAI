@@ -95,7 +95,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="bg-background flex flex-col" style={{ height: 'calc(100vh - 56px)' }}>
+    <div className="bg-background flex flex-col h-[calc(100dvh-56px-4rem)] md:h-[calc(100dvh-56px)]">
       <div className="max-w-3xl w-full mx-auto px-4 flex flex-col flex-1 py-4 gap-4 min-h-0">
 
         {/* ── Hero header — PAS de overflow-hidden ── */}

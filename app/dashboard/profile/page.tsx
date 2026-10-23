@@ -347,12 +347,12 @@ export default function ProfilePage() {
                   </div>
                 ))}
                 {socialFields.map((field, i) => (
-                  <div key={field.id} className="flex gap-2 items-center">
+                  <div key={field.id} className="flex flex-wrap gap-2 items-center">
                     <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
                       <Globe className="w-3.5 h-3.5 text-muted-foreground" />
                     </div>
                     <Input {...form.register(`socialLinks.${i}.label`)} placeholder="Nom (ex: Behance)" className="w-28 h-9 text-sm shrink-0" />
-                    <Input {...form.register(`socialLinks.${i}.url`)} placeholder="https://..." type="url" className="flex-1 h-9 text-sm" />
+                    <Input {...form.register(`socialLinks.${i}.url`)} placeholder="https://..." type="url" className="flex-1 min-w-[140px] h-9 text-sm" />
                     <button type="button" onClick={() => removeSocial(i)} className="w-8 flex items-center justify-center text-muted-foreground hover:text-rose-400 transition-colors">
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -385,7 +385,7 @@ export default function ProfilePage() {
                   <div key={field.id} className="relative rounded-xl border border-border bg-muted/20 p-4 group hover:border-amber-500/30 transition-colors">
                     <span className="absolute top-3 left-4 text-[10px] font-bold text-muted-foreground/40 font-mono">#{String(i + 1).padStart(2, '0')}</span>
                     <button type="button" onClick={() => removeExp(i)}
-                      className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                      className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
@@ -426,7 +426,7 @@ export default function ProfilePage() {
                 <div className="flex flex-wrap gap-2 mb-3">
                   {form.watch('skills').map((_, i) => (
                     <div key={i} className="group flex items-center gap-1 bg-muted/50 border border-border rounded-lg overflow-hidden hover:border-emerald-500/40 transition-colors">
-                      <Input {...form.register(`skills.${i}`)} placeholder="React, Python..." className="w-36 h-8 text-xs border-0 bg-transparent focus-visible:ring-0 px-2.5" />
+                      <Input {...form.register(`skills.${i}`)} placeholder="React, Python..." className="w-28 sm:w-36 h-8 text-xs border-0 bg-transparent focus-visible:ring-0 px-2.5" />
                       <button type="button" onClick={() => form.setValue('skills', form.getValues('skills').filter((_, idx) => idx !== i))}
                         className="w-7 h-8 flex items-center justify-center text-muted-foreground hover:text-rose-400 transition-colors border-l border-border">
                         <X className="w-3 h-3" />
@@ -462,7 +462,7 @@ export default function ProfilePage() {
                     <div key={field.id} className="relative rounded-xl border border-border bg-muted/20 p-4 group hover:border-violet-500/30 transition-colors">
                       <span className="absolute top-3 left-4 text-[10px] font-bold text-muted-foreground/40 font-mono">#{String(i + 1).padStart(2, '0')}</span>
                       <button type="button" onClick={() => removeProj(i)}
-                        className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                        className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
@@ -520,7 +520,7 @@ export default function ProfilePage() {
                 {eduFields.map((field, i) => (
                   <div key={field.id} className="relative rounded-xl border border-border bg-muted/20 p-4 group hover:border-cyan-500/30 transition-colors">
                     <button type="button" onClick={() => removeEdu(i)}
-                      className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                      className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -586,10 +586,10 @@ export default function ProfilePage() {
               >
                 <div className="mt-3 space-y-2">
                   {certFields.map((field, i) => (
-                    <div key={field.id} className="flex gap-2 items-center">
-                      <Input {...form.register(`certifications.${i}.name`)} placeholder="AWS Cloud..." className="h-8 text-xs flex-1" />
-                      <Input {...form.register(`certifications.${i}.issuer`)} placeholder="Organisme" className="h-8 text-xs w-20" />
-                      <Input {...form.register(`certifications.${i}.date`)} placeholder="2024" className="h-8 text-xs w-14" />
+                    <div key={field.id} className="flex flex-wrap gap-2 items-center">
+                      <Input {...form.register(`certifications.${i}.name`)} placeholder="AWS Cloud..." className="h-8 text-xs flex-1 min-w-[140px]" />
+                      <Input {...form.register(`certifications.${i}.issuer`)} placeholder="Organisme" className="h-8 text-xs flex-1 min-w-[100px]" />
+                      <Input {...form.register(`certifications.${i}.date`)} placeholder="2024" className="h-8 text-xs w-16" />
                       <button type="button" onClick={() => removeCert(i)} className="text-muted-foreground hover:text-rose-400 transition-colors">
                         <X className="w-3.5 h-3.5" />
                       </button>

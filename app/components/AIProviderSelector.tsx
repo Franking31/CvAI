@@ -34,7 +34,7 @@ export default function AIProviderSelector() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-border bg-popover shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1.5 w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-border bg-popover shadow-xl z-50 overflow-hidden">
           {(Object.entries(AI_PROVIDERS) as [AIProvider, typeof AI_PROVIDERS[AIProvider]][]).map(
             ([key, prov]) => (
               <div key={key}>

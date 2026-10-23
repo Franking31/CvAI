@@ -1,7 +1,7 @@
 // app/components/cv/CVPreview.tsx
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { useCVStore } from '@/lib/store';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Section = 'header' | 'summary' | 'experiences' | 'skills' | 'education' | 'projects' | 'languages' | 'certifications' | 'interests';
+
 
 const FONTS = [
   { label: 'Par défaut (selon template)', value: 'default' },
@@ -52,8 +53,24 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
   const [cvStyle, setCvStyle]         = useState<CVStyle>(DEFAULT_CV_STYLE);
   const fileInputRef                  = useRef<HTMLInputElement>(null);
 
+  // ── Aperçu responsive ──
+  const wrapRef  = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale]   = useState(0.75);
+  const [innerH, setInnerH] = useState(1123);
+
   const html = buildCVHtml(cv, template, cvStyle, photoDataUrl);
   const updateStyle = (patch: Partial<CVStyle>) => setCvStyle(prev => ({ ...prev, ...patch }));
+
+  useEffect(() => {
+    const update = () => {
+      if (wrapRef.current)  setScale(Math.min(1, wrapRef.current.clientWidth / 794));
+      if (innerRef.current) setInnerH(innerRef.current.scrollHeight);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [html]);
 
   // ─── Photo upload ─────────────────────────────────────────────────────────
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -455,7 +472,7 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
             <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-4">Éditeur de sections</p>
 
             <EditorSection title="Informations personnelles" open={openSection === 'header'} onToggle={() => toggle('header')}>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <LabeledInput label="Nom complet"     value={cv.fullName}             onChange={v => update({ fullName: v })} />
                 <LabeledInput label="Titre du poste"  value={cv.title}                onChange={v => update({ title: v })} />
                 <LabeledInput label="Email"           value={cv.contact?.email || ''} onChange={v => updateContact({ email: v })} />
@@ -480,7 +497,7 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <LabeledInput label="Poste"     value={exp.position} onChange={v => updateExp(ei, { position: v })} />
                       <LabeledInput label="Entreprise" value={exp.company}  onChange={v => updateExp(ei, { company: v })} />
                       <LabeledInput label="Période"   value={exp.dates}    onChange={v => updateExp(ei, { dates: v })} />
@@ -524,7 +541,7 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <LabeledInput label="Diplôme"       value={edu.degree} onChange={v => setCv(p => { const e = [...p.education]; e[i] = { ...e[i], degree: v }; return { ...p, education: e }; })} />
                       <LabeledInput label="Établissement" value={edu.school}  onChange={v => setCv(p => { const e = [...p.education]; e[i] = { ...e[i], school: v }; return { ...p, education: e }; })} />
                       <LabeledInput label="Période"       value={edu.dates}   onChange={v => setCv(p => { const e = [...p.education]; e[i] = { ...e[i], dates: v }; return { ...p, education: e }; })} />
@@ -548,7 +565,7 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <LabeledInput label="Nom"     value={p.name}      onChange={v => setCv(prev => { const ps = [...(prev.projects || [])]; ps[i] = { ...ps[i], name: v };  return { ...prev, projects: ps }; })} />
                       <LabeledInput label="Période" value={p.dates || ''} onChange={v => setCv(prev => { const ps = [...(prev.projects || [])]; ps[i] = { ...ps[i], dates: v }; return { ...prev, projects: ps }; })} />
                     </div>
@@ -611,15 +628,18 @@ export default function CVPreview({ cv: initialCv }: { cv: CVData }) {
         </Card>
       )}
 
-      {/* CV Preview */}
-      <div className="rounded-xl overflow-hidden border shadow-lg bg-white">
-        <div className="overflow-x-auto">
-          <div style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.3%', minHeight: '600px' }}>
+    {/* CV Preview */}
+      <div ref={wrapRef} className="rounded-xl overflow-hidden border shadow-lg bg-white">
+        <div style={{ height: innerH * scale }}>
+          <div
+            ref={innerRef}
+            style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 794 }}
+          >
             <div dangerouslySetInnerHTML={{ __html: html }} />
           </div>
         </div>
       </div>
-    </div>
+    </div>   
   );
 }
 

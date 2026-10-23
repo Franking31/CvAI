@@ -50,7 +50,7 @@ function StatCard({ title, value, icon: Icon, trend, color, href }: StatCardProp
             <Icon className="w-5 h-5" />
           </div>
         </div>
-        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </div>
       </div>

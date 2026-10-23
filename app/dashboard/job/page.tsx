@@ -272,7 +272,7 @@ function QCMPlayer({ test, onRestart }: { test: JobTest; onRestart: () => void }
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
-                className={`w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center transition-all ${
+                className={`w-7 h-7 sm:w-5 sm:h-5 rounded-full text-[9px] font-bold flex items-center justify-center transition-all ${
                   i === current
                     ? 'ring-2 ring-primary ring-offset-1 bg-primary text-primary-foreground'
                     : ans === null

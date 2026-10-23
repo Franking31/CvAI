@@ -355,7 +355,7 @@ function QCMPlayer({
                 key={i}
                 onClick={() => setCurrent(i)}
                 className={cn(
-                  'w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center transition-all',
+                  'w-7 h-7 sm:w-5 sm:h-5 rounded-full text-[9px] font-bold flex items-center justify-center transition-all',
                   i === current
                     ? 'ring-2 ring-primary ring-offset-1 bg-primary text-primary-foreground'
                     : ans === null
@@ -726,7 +726,7 @@ function HistoryTab() {
         return (
           <div key={saved.id} className="border rounded-2xl overflow-hidden bg-background shadow-sm">
             {/* Ligne résumé */}
-            <div className="flex items-center gap-3 px-5 py-4">
+            <div className="flex flex-wrap items-center gap-3 px-4 sm:px-5 py-4">
               <button
                 className="flex-1 flex items-start gap-3 text-left"
                 onClick={() => setExpanded(isOpen ? null : saved.id)}
@@ -752,7 +752,7 @@ function HistoryTab() {
                 </div>
               </button>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                 {/* Score */}
                 <div className="text-right">
                   <p className={cn(

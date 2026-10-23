@@ -128,3 +128,9 @@
     @apply font-sans;
   }
 }
+
+html, body { overflow-x: hidden; }
+
+@media (max-width: 767px) {
+  input, textarea, select { font-size: 16px !important; } /* évite le zoom auto iOS */
+}
